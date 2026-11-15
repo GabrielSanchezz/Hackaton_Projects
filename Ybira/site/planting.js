@@ -26,6 +26,11 @@
       measure: true,
       minimum: "City guide minimum: 1.90 m total, excluding the curb.",
     },
+    sidewalkLength: {
+      label: "Sidewalk length along the street (optional)",
+      help: "Measure parallel to the curb. The guide checks the width separately, from the property line to the inside edge of the curb.",
+      measure: true,
+    },
     wires: {
       label: "Are there wires above the spot?",
       help: "Look up from ground level. Check for wires crossing or running along the planting spot. If you see a wire or are unsure what it carries, choose Yes or check later.",
@@ -129,6 +134,7 @@
   ];
   let answers = {};
   let extracted = [];
+  let photoReview = false;
   let step;
   let history = [];
   let technicalMode = false;
@@ -371,7 +377,11 @@
       : target === "quick" ? "Find trees for this sidewalk"
         : target === "bed" ? "Measure the planting bed" : target === "wiredClearances" ? "Are there any obstacles too close?"
         : target === "wiredLocation" ? "Confirm the planting location" : "Tell us a little more";
-    $("assessment-note").textContent = target === "review" ? "Correct anything that looks off before you continue."
+    const reviewNote = photoReview ? "Review the suggestions from your photo and any description you sent."
+      : "Correct anything that looks off before you continue.";
+    const widthNote = answers.sidewalkLength && !answers.total
+      ? " You entered a length along the street. To check what fits, Ybirá needs the width across the sidewalk." : "";
+    $("assessment-note").textContent = target === "review" ? reviewNote + widthNote
       : target === "wiredClearances" ? "Use these minimums only for small trees under wires. Measure from where the trunk would go." : "";
     if (target === "bed") showBedMeasurements(content);
     else if (target === "quick") {
@@ -539,10 +549,13 @@
 
   function start(values, fromPhoto = false) {
     answers = {};
-    for (const name of ["place", "total", "free", "wires", "tree", "pole"]) {
+    photoReview = fromPhoto;
+    const fields = ["place", "total", "sidewalkLength", "free", "wires", "tree", "pole"];
+    for (const name of fields) {
       if (values[name] != null) answers[name] = String(values[name]);
     }
-    extracted = fromPhoto ? [...new Set(["place", "wires", "tree", "pole", ...Object.keys(answers)])] : Object.keys(answers);
+    extracted = fields.filter(name => Object.hasOwn(answers, name)
+      || (fromPhoto && ["place", "wires", "tree", "pole"].includes(name)));
     if (!extracted.length && !fromPhoto) answers.place = "calcada";
     step = null;
     history = [];
@@ -550,10 +563,16 @@
     fullReview = false;
     wiredChecksReviewed = false;
     proceed(extracted.length ? "review" : nextStep());
-    if (fromPhoto) $("assessment-note").textContent = "Review the photo suggestions. Blank fields need an in-person check.";
   }
 
   $("manual-start").addEventListener("click", () => start({}));
+  const button = $("interpret-button");
+  function updateSubmitLabel() {
+    button.textContent = photo.files.length
+      ? description.value.trim() ? "Analyze photo and description" : "Analyze my photo"
+      : "Read my description";
+  }
+  description.addEventListener("input", updateSubmitLabel);
   let previewUrl;
   photo.addEventListener("change", () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -561,7 +580,7 @@
     previewUrl = photo.files.length ? URL.createObjectURL(photo.files[0]) : null;
     if (previewUrl) photoPreview.src = previewUrl;
     else photoPreview.removeAttribute("src");
-    $("interpret-button").textContent = previewUrl ? "Review my photo" : "Read my description";
+    updateSubmitLabel();
     status.textContent = "";
   });
 
@@ -588,10 +607,10 @@
       status.textContent = "Add a photo or write a short description.";
       return;
     }
-    const button = $("interpret-button");
     const manual = $("manual-start");
     button.disabled = manual.disabled = true;
-    status.textContent = file ? "Checking the photo…" : "Reading your description…";
+    status.textContent = file && text ? "Analyzing your photo and description…"
+      : file ? "Analyzing your photo…" : "Reading your description…";
     let values;
     try {
       if (location.protocol === "file:") throw Error("Offline");
@@ -646,7 +665,7 @@
       updates[name] = measurement;
     }
     if (step === "review" && updates.place && updates.place !== answers.place && updates.place !== "calcada") {
-      updates.total = updates.free = "";
+      updates.total = updates.free = updates.sidewalkLength = "";
     }
     if (step !== "code" && Object.entries(updates).some(([name, value]) => answers[name] !== value)) delete answers.code;
     if (["quick", "review"].includes(step) && ["place", "total", "wires"].some(name => Object.hasOwn(updates, name) && updates[name] !== answers[name])) fullReview = false;

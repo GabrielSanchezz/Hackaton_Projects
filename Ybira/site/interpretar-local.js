@@ -24,7 +24,7 @@ function interpretarLocal(description) {
   const declared = sites.filter(([, pattern]) => pattern.test(t)).map(([type]) => type);
   const specific = declared.filter((type) => type !== "rua");
   const place = specific.length === 1 ? specific[0] : specific.length === 0 && declared.length === 1 ? declared[0] : null;
-  const clauses = t.split(/[.;!?\n]|,\s+/).filter(Boolean);
+  const clauses = t.split(/(?<!\d)\.|\.(?!\d)|[;!?\n]|,\s+|\b(?:and|e|with|com)\b/).filter(Boolean);
   const words = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5 };
   const findMeasure = (source, pattern) => {
     const matches = [...source.matchAll(pattern)];
@@ -32,14 +32,19 @@ function interpretarLocal(description) {
     const [, raw, unit] = matches[0];
     const value = words[raw] ?? Number(raw.replace(",", "."));
     if (!Number.isFinite(value)) return null;
-    return unit === "cm" || unit.startsWith("centimetro") ? value / 100 : value;
+    const meters = unit === "cm" || unit.startsWith("centimetro") ? value / 100 : value;
+    return Math.round(meters * 100) / 100;
   };
   const units = "(\\d+(?:[.,]\\d+)?|um|uma|dois|duas|tres|quatro|cinco)\\s*(centimetros?|cm|metros?|m)(?![²2]|\\s+quadrados?)\\b";
   const pattern = new RegExp("\\b" + units, "g");
-  const freeLines = clauses.filter((line) => /faixa livre|livre para|para pedestres/.test(line));
-  const sidewalkLines = clauses.filter((line) => /calcada|passeio|largura total/.test(line) && !/faixa livre|livre para|para pedestres|poste|arvore/.test(line));
-  const free = place === "calcada" ? findMeasure(freeLines.join(";"), pattern) : null;
-  const total = place === "calcada" ? findMeasure(sidewalkLines.join(";"), pattern) : null;
+  const freeLines = clauses.filter(line => /faixa livre|livre para|para pedestres/.test(line));
+  const sidewalkLines = clauses.filter(line => !/faixa livre|livre para|para pedestres|planting bed|canteiro|driveway|garagem|\b(?:distance|distancia|away)\b/.test(line));
+  const widths = sidewalkLines.filter(line => /\b(?:width|wide|largura|larg[oa])\b/.test(line));
+  const lengths = sidewalkLines.filter(line => /\b(?:length|long|comprimento|comprid[oa]|extensao)\b/.test(line));
+  const allowSidewalkMeasures = !place || place === "calcada";
+  const free = allowSidewalkMeasures ? findMeasure(freeLines.join(";"), pattern) : null;
+  const total = allowSidewalkMeasures ? findMeasure(widths.join(";"), pattern) : null;
+  const sidewalkLength = allowSidewalkMeasures ? findMeasure(lengths.join(";"), pattern) : null;
   const area = findMeasure(t, /\b(\d+(?:[.,]\d+)?)\s*(m²|m2|metros? quadrados?)(?!\w)/g);
   function status(no, yes) {
     const absent = no.test(t);
@@ -48,5 +53,7 @@ function interpretarLocal(description) {
   }
   const wires = status(/\b(?:sem|nao ha|nao tem)\s+(?:fios?|fiacao|rede aerea)\b/g, /\b(?:tem|ha|com)\s+(?:fios?|fiacao|rede aerea)\b|\bfios? em cima\b/);
   const tree = status(/\b(?:sem|nao ha|nao tem)\s+arvores?\b/g, /\b(?:ja tem|tem|ha)\s+(?:uma\s+)?arvore\b|\barvore existente\b/);
-  return { place, total, free, area, wires, tree };
+  return { place, total, free, sidewalkLength, area, wires, tree };
 }
+
+globalThis.interpretarLocal = interpretarLocal;
