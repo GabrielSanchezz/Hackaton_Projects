@@ -5,14 +5,14 @@
   const targets = $("targets");
   const missing = "Data unavailable";
   const categories = ["White · Branca", "Black · Preta", "Asian · Amarela", "Brown · Parda", "Indigenous · Indígena"];
-  const rows = sectorIndicators;
-  const top = priorityOrder.slice(0, 3);
   const currency = new Intl.NumberFormat("en", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
   const pct = value => fmt(value * 100) + "%";
   const temperature = value => fmt(value) + " °C";
-  const areaName = area => area.community || "Census area " + area.id.slice(-3);
+  const areaName = area => area.name || "Census area " + area.id.slice(-3);
+  const shortName = area => area.scale === "district" ? area.name : area.id.slice(-3);
   let current;
-  let comparison;
+  const comparisons = new Map();
+  let displayedScale;
 
   function el(tag, text, className) {
     const element = document.createElement(tag);
@@ -43,12 +43,12 @@
 
   function comparePanel(area) {
     const section = el("section", "", "org-compare");
-    const pinned = rows.get(comparison);
+    const pinned = comparisons.get(area.scale);
     if (pinned && pinned.id !== area.id) {
       section.append(el("h4", "Compare with " + areaName(pinned)));
       const table = el("table");
       const head = table.createTHead().insertRow();
-      for (const title of ["Metric", area.id.slice(-3), pinned.id.slice(-3)]) {
+      for (const title of ["Metric", shortName(area), shortName(pinned)]) {
         const cell = el("th", title);
         cell.scope = "col";
         head.append(cell);
@@ -74,8 +74,9 @@
     const button = el("button", pinned?.id === area.id ? "Clear comparison" : "Pin this area to compare", "text-button");
     button.type = "button";
     button.addEventListener("click", () => {
-      comparison = pinned?.id === area.id ? undefined : area.id;
-      render(area.id);
+      if (pinned?.id === area.id) comparisons.delete(area.scale);
+      else comparisons.set(area.scale, area);
+      render(area);
       profile.querySelector(".org-compare button").focus();
     });
     section.append(button);
@@ -98,12 +99,14 @@
     return chart;
   }
 
-  function render(id) {
-    const area = rows.get(id);
+  function render(area) {
     if (!area) return;
+    const { id, scale } = area;
+    const district = scale === "district";
     current = area;
+    if (displayedScale !== scale) renderTargets(scale);
     $("visit-status").textContent = "";
-    for (const button of targets.querySelectorAll("button")) button.setAttribute("aria-pressed", String(button.dataset.sector === id));
+    for (const button of targets.querySelectorAll("button")) button.setAttribute("aria-pressed", String(button.dataset.area === id));
     const heading = el("h3", areaName(area));
     heading.id = "profile-title";
     const metrics = el("div", "", "org-metrics");
@@ -111,10 +114,10 @@
       metric("Average surface heat", area.heat ? temperature(area.mean) : "—", "Satellite pixels inside the area"),
       metric("Hottest pixel", area.heat ? temperature(area.max) : "—", "Highest surface reading in this image"),
       metric("Potential exposure", area.exposed === null ? "—" : pct(area.exposed), "Residents on street blocks without trees"),
-      metric("Vegetation cover", area.vegetation === null ? "—" : pct(area.vegetation), "Share of land mapped as vegetation · 2017–18 imagery"),
+      metric("Vegetation cover", area.vegetation === null ? "—" : pct(area.vegetation), district ? "Share of district mapped as vegetation · 2020 indicator" : "Share of land mapped as vegetation · 2017–18 imagery"),
       metric("Median income", area.income === null ? "—" : currency.format(area.income), "Monthly income of household heads with earnings · 2022"),
     );
-    profile.replaceChildren(heading, el("p", "Sector " + id + (area.population === null ? "" : " · " + fmt(area.population) + " residents (Census 2022)"), "small"), metrics);
+    profile.replaceChildren(heading, el("p", (district ? "District " : "Census area ") + id + (area.population === null ? "" : " · " + fmt(area.population) + " residents (Census 2022)"), "small"), metrics);
     const coverage = area.sampled > 0 ? pct(area.pixels / area.sampled) + " valid pixels (" + area.pixels + "/" + area.sampled + ")" : "No sample";
     profile.append(el("p", "Nov 29, 2025 · Landsat 9 · " + coverage + ". Surface readings are a snapshot of roofs and ground.", "small"));
     if (!area.heat) profile.append(el("p", "Satellite coverage is too limited to show a comparable heat estimate.", "small"));
@@ -133,24 +136,31 @@
       const share = hasData ? count / area.population : 0;
       distribution.append(bar(name, share, hasData ? pct(share) : missing, colors[i]));
     }
-    distribution.append(el("p", "Shares use the sector’s total population. Some census counts may be suppressed.", "small"));
+    distribution.append(el("p", "Shares use the area’s total population. Some census counts may be suppressed.", "small"));
     profile.append(distribution, comparePanel(area));
   }
 
-  for (const [index, area] of top.entries()) {
-    const button = el("button");
-    button.type = "button";
-    button.dataset.sector = area.id;
-    button.setAttribute("aria-pressed", "false");
-    button.append(
-      el("strong", (index + 1) + ". " + areaName(area)),
-      el("span", fmt(area.priority) + "/100 · " + temperature(area.mean) + " avg. · " + pct(area.vegetation) + " vegetation"),
-    );
-    button.addEventListener("click", () => selectSector(area.id, true));
-    targets.append(button);
+  function renderTargets(scale) {
+    displayedScale = scale;
+    const district = scale === "district";
+    const top = (district ? districtPriorityOrder : priorityOrder).slice(0, 3);
+    $("priority-heading").textContent = district ? "Top priority districts" : "Top priority census areas";
+    targets.replaceChildren();
+    for (const [index, area] of top.entries()) {
+      const button = el("button");
+      button.type = "button";
+      button.dataset.area = area.id;
+      button.setAttribute("aria-pressed", "false");
+      button.append(
+        el("strong", (index + 1) + ". " + areaName(area)),
+        el("span", fmt(area.priority) + "/100 · " + temperature(area.mean) + " avg. · " + pct(area.vegetation) + " vegetation"),
+      );
+      button.addEventListener("click", () => selectArea(area.id, scale, true));
+      targets.append(button);
+    }
   }
 
-  $("map").addEventListener("sectorchange", event => render(event.detail));
+  $("map").addEventListener("areachange", event => render(event.detail));
   $("assess-visit").addEventListener("click", () => {
     tab(false);
     $("description").focus();
@@ -158,8 +168,8 @@
   $("copy-visit").addEventListener("click", async () => {
     if (!current) return;
     const lines = [
-      "Ybirá field visit · Brasilândia, São Paulo",
-      areaName(current) + " · Census area " + current.id,
+      "Ybirá field visit · São Paulo",
+      areaName(current) + " · " + (current.scale === "district" ? "District " : "Census area ") + current.id,
       current.priority == null ? "Priority score unavailable." : "Planting priority: " + fmt(current.priority) + "/100.",
       current.heat ? "Landsat 9, Nov 29 2025: " + temperature(current.mean) + " average surface heat; " + temperature(current.max) + " hottest valid pixel." : "Surface heat has insufficient coverage.",
       current.exposed === null ? "Street tree data unavailable." : fmt(current.without) + " of " + fmt(current.assessed) + " residents were on block faces without trees (Census 2022).",

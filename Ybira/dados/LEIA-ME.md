@@ -26,6 +26,12 @@ O indicador Landsat representa **a temperatura da superfície em um único dia**
 
 Os pesos propostos estão em `../site/priority.js`. Percentis de temperatura e renda usam somente os setores elegíveis. O score não é calculado quando falta algum dos cinco indicadores ou a cena não tem pelo menos cinco pixels válidos com cobertura de 80% no setor. O indicador racial descreve a composição do setor. A renda é a mediana mensal dos responsáveis com rendimento. A exposição sem árvores descreve moradores em faces de quadra avaliadas pelo IBGE.
 
+### Comparação entre os 96 distritos
+
+`gerar_metricas_distritos.py` gera `../site/district-data.js` a partir do GeoTIFF, dos limites municipais, do vínculo GeoSampa–IBGE e dos agregados distritais do Censo. A média e o pico de superfície usam os centros dos pixels válidos dentro do distrito. A cobertura vegetal é o percentual distrital de 2020 publicado na planilha aberta do [Mapa da Desigualdade 2023](https://nossasaopaulo.org.br/o-que-fazemos/mapa-da-desigualdade/). A referência baixada fica em `originais/mapa_da_desigualdade_2023_dados.xlsx`. Execute com Python, Pillow, NumPy e openpyxl.
+
+O score usa os mesmos pesos nas duas escalas. Os percentis distritais comparam os distritos entre si. Os percentis setoriais comparam somente os setores elegíveis da Brasilândia, cuja cobertura vegetal vem do cálculo sobre os polígonos do GeoSampa.
+
 ## Assistente de plantio
 
 - `02_calcadas_brasilandia.geojson` reúne polígonos de calçada com largura mínima, máxima e o campo de largura média do serviço, além de declividade. As medidas descrevem o trecho. Confirme no ponto de plantio medidas, fiação, interferências e faixa livre.

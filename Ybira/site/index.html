@@ -41,8 +41,8 @@
     </section>
     <section class="panel audience-panel" id="org" hidden>
       <h2>Plan a planting visit</h2>
-      <p>Find where heat and the lack of street trees overlap in Brasilândia.</p>
-      <h3>Where to start</h3>
+      <p>Compare São Paulo’s 96 districts. Explore individual census areas in the Brasilândia pilot.</p>
+      <h3 id="priority-heading">Top priority districts</h3>
       <div id="targets" class="priority-list"></div>
       <section id="org-profile" aria-labelledby="profile-title"></section>
       <div class="form-actions visit-actions">
@@ -51,8 +51,8 @@
         <span id="visit-status" class="small" role="status"></span>
       </div>
       <details class="ranking-source"><summary>How priorities are calculated</summary>
-        <p>The pilot score uses 30 points for surface heat, 25 for lack of vegetation, and 15 each for lower income, the share of residents who identify as Black or Brown, and the share living on block faces without trees. Heat and income use percentiles of eligible areas. The other factors use their shares directly. The weights are a proposed planning policy for this pilot and should be reviewed with residents and partner organizations.</p>
-        <p>The race factor is an area-level equity measure. A sector needs data for all five factors, at least five valid satellite pixels and at least 80% valid pixel coverage to receive a score. Income is the median for household heads with earnings.</p>
+        <p>The score uses 30 points for surface heat, 25 for lack of vegetation, and 15 each for lower income, the share of residents who identify as Black or Brown, and the share living on block faces without trees. Heat and income percentiles use the current scale: São Paulo districts or Brasilândia census areas. Compare scores within the same scale. The weights are a planning proposal for review with residents and partner organizations.</p>
+        <p>The race factor is an area-level equity measure. An area needs all five indicators, at least five valid satellite pixels and at least 80% valid pixel coverage to receive a score. Income is the median for household heads with earnings.</p>
       </details>
       <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/servicos/viveiros/fornecimento_de_mudas/4465">São Paulo’s seedling program for organizations</a>
     </section>
@@ -76,7 +76,8 @@
           <button type="button" id="map-out" aria-label="Zoom out">−</button>
         </div>
       </div>
-      <label class="map-select" for="map-area">Find an area in Brasilândia<select id="map-area"><option value="">Select a census area</option></select></label>
+      <label class="map-select" for="map-district">Find a district<select id="map-district"><option value="">Select a district</option></select></label>
+      <label class="map-select" id="map-sector-control" for="map-area" hidden>Find a census area in Brasilândia<select id="map-area"><option value="">Select a census area</option></select></label>
       <p class="small">Scroll or pinch to zoom. Drag to move. Select an area to see its data.</p>
       <p class="small">District names appear as you zoom, followed by named IBGE communities where available.</p>
       <p class="small map-legend-title" id="legend-title"></p>
@@ -86,10 +87,11 @@
       <a id="map-profile-link" href="#profile-title" hidden>See the selected area’s charts</a>
     </section>
   </div>
-  <footer>Sources: <a href="https://novogeosampa.prefeitura.sp.gov.br/">GeoSampa (CC BY-SA)</a>, <a href="https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/">IBGE</a>, <a href="https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-temperature">Landsat/USGS</a> and <a href="https://prefeitura.sp.gov.br/meio_ambiente/w/publicacoes_svma/188452">Municipal planting guide</a>.</footer>
+  <footer>Sources: <a href="https://novogeosampa.prefeitura.sp.gov.br/">GeoSampa (CC BY-SA)</a>, <a href="https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/">IBGE</a>, <a href="https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-temperature">Landsat/USGS</a>, <a href="https://nossasaopaulo.org.br/o-que-fazemos/mapa-da-desigualdade/">Rede Nossa São Paulo (district vegetation)</a> and <a href="https://prefeitura.sp.gov.br/meio_ambiente/w/publicacoes_svma/188452">Municipal planting guide</a>.</footer>
 </main>
 <script src="data.js"></script>
 <script src="organization-data.js"></script>
+<script src="district-data.js"></script>
 <script src="priority.js"></script>
 <script src="catalog.js"></script>
 <script src="recommend.js"></script>

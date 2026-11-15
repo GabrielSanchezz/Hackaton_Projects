@@ -14,6 +14,9 @@ const pointers = new Map();
 let dragging = false;
 let suppressClick = false;
 let selected = null;
+let pilotMode = false;
+let lastSector = reference;
+let lastDistrict;
 const ratioLabels = ["<20%", "20–<40%", "40–<60%", "60–<80%", "80–100%"];
 const ratios = [.2, .4, .6, .8];
 const greens = ["#ebf3eb", "#bce0bd", "#77bb87", "#3f8f66", "#185941"];
@@ -36,10 +39,12 @@ function formatLayer(key, value) {
   return fmt(value * 100) + "%";
 }
 
-function setLayer(key, focus = false) {
+function setLayer(key) {
   $("map-layer").value = key;
   const layer = layers[key];
-  $("legend-title").textContent = layer.label;
+  const cityVegetation = "Vegetation cover · Rede Nossa São Paulo, 2020 indicator";
+  $("legend-title").textContent = key === "priority" ? layer.label + (pilotMode ? " · Brasilândia census areas" : " · São Paulo districts")
+    : key === "vegetation" && !pilotMode ? cityVegetation : layer.label;
   const legend = $("map-legend");
   legend.replaceChildren();
   for (const [index, label] of layer.labels.entries()) {
@@ -48,18 +53,15 @@ function setLayer(key, focus = false) {
     swatch.style.setProperty("--color", layer.palette[index]);
     legend.append(swatch);
   }
-  for (const [id, shape] of sectorPaths) {
-    const area = sectorIndicators.get(id);
+  function colorArea(shape, area, muted = false) {
     const value = layer.value(area);
     const band = layer.bands.filter(threshold => value >= threshold).length;
-    shape.setAttribute("fill", Number.isFinite(value) ? layer.palette[band] : "#bac3c0");
-    shape.firstElementChild.textContent = "Census area " + id + " · " + formatLayer(key, value);
+    shape.setAttribute("fill", muted ? "#e4eae7" : Number.isFinite(value) ? layer.palette[band] : "#bac3c0");
+    shape.firstElementChild.textContent = (area.name ?? "Census area " + area.id) + " · " + formatLayer(key, value);
   }
-  for (const district of districts.children) {
-    district.setAttribute("fill", key === "heat" ? district.dataset.heatColor : "#e4eae7");
-  }
-  if (focus && key !== "heat" && sectors.classList.contains("map-hidden")) focusPilot();
-  if (selected && !sectors.classList.contains("map-hidden")) describeSelection(selected);
+  for (const [id, shape] of sectorPaths) colorArea(shape, sectorIndicators.get(id));
+  for (const [id, shape] of districtPaths) colorArea(shape, districtIndicators.get(id), pilotMode);
+  if (selected) describeSelection(selected);
 }
 
 function svg(tag, attrs = {}) {
@@ -84,15 +86,18 @@ const districts = svg("g");
 const sectors = svg("g", { class: "map-sectors" });
 const districtLabels = svg("g", { class: "district-labels" });
 const communityLabels = svg("g", { class: "community-labels" });
-const pilotDistrict = data.city.find(record => townLabel(record) === pilotName);
 const sectorPaths = new Map();
+const districtPaths = new Map();
+const nameKey = value => value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const districtIds = new Map([...districtIndicators.values()].map(area => [nameKey(area.name), area.id]));
+const pilotId = districtIds.get(nameKey(pilotName));
 
 for (const record of data.city) {
-  const isPilot = record === pilotDistrict;
-  const heatColor = colors[record.band] ?? "#bac3c0";
-  const attrs = { fill: heatColor, "data-heat-color": heatColor, "data-district": townLabel(record), "data-temperature": record.label.split(" · ")[1] ?? "" };
+  const id = districtIds.get(nameKey(townLabel(record)));
+  const attrs = { "data-district": id };
   const path = addShape(record, attrs);
-  if (isPilot) path.classList.add("pilot-area");
+  if (id === pilotId) path.classList.add("pilot-area");
+  districtPaths.set(id, path);
   districts.append(path);
 }
 const outline = svg("path", { d: data.outlines[1], class: "outline" });
@@ -120,7 +125,7 @@ function makeLabel(parent, text, x, y) {
 
 for (const district of districts.children) {
   const box = district.getBBox();
-  makeLabel(districtLabels, district.dataset.district, box.x + box.width / 2, box.y + box.height / 2);
+  makeLabel(districtLabels, districtIndicators.get(district.dataset.district).name, box.x + box.width / 2, box.y + box.height / 2);
 }
 
 const communities = new Map();
@@ -162,16 +167,16 @@ function renderMap() {
   map.setAttribute("viewBox", [view.x, view.y, w, h].join(" "));
   const seesPilot = view.x < pilotBox.x + pilotBox.width && view.x + w > pilotBox.x
     && view.y < pilotBox.y + pilotBox.height && view.y + h > pilotBox.y;
-  const showSectors = view.k >= 4 && seesPilot;
+  const showSectors = pilotMode && seesPilot;
   sectors.classList.toggle("map-hidden", !showSectors);
   districtLabels.classList.toggle("map-hidden", view.k < 2 || (showSectors && view.k >= 11));
   communityLabels.classList.toggle("map-hidden", !showSectors || view.k < 11);
   map.style.setProperty("--label-size", (11 / view.k) + "px");
   spaceLabels(districtLabels, w, h);
   spaceLabels(communityLabels, w, h);
-  $("map-title").textContent = showSectors ? pilotName : "São Paulo";
-  $("zoom").textContent = showSectors ? "Back to São Paulo" : "Explore Brasilândia";
-  $("map-out").disabled = view.k <= 1;
+  $("map-title").textContent = pilotMode ? pilotName : "São Paulo";
+  $("zoom").textContent = pilotMode ? "Back to São Paulo" : "Explore Brasilândia";
+  $("map-out").disabled = view.k <= (pilotMode ? 4 : 1);
   $("map-in").disabled = view.k >= 55;
 }
 
@@ -181,7 +186,7 @@ function world(clientX, clientY) {
 
 function zoomAt(factor, clientX, clientY) {
   const target = world(clientX, clientY);
-  const next = Math.min(55, Math.max(1, view.k * factor));
+  const next = Math.min(55, Math.max(pilotMode ? 4 : 1, view.k * factor));
   view.x = target.x - (target.x - view.x) * view.k / next;
   view.y = target.y - (target.y - view.y) * view.k / next;
   view.k = next;
@@ -200,30 +205,46 @@ function focusArea(x, y, k) {
   renderMap();
 }
 
-function focusPilot() {
-  focusArea(pilotBox.x + pilotBox.width / 2, pilotBox.y + pilotBox.height / 2, 8);
-}
-
-function describeSelection(id) {
-  const area = sectorIndicators.get(id);
+function describeSelection(area) {
   const key = $("map-layer").value;
-  $("detail").textContent = (area.community ? area.community + " · " : "") + "Census area " + id
-    + " · " + formatLayer(key, layers[key].value(area));
+  const label = area.scale === "district" ? area.name + " district"
+    : (area.name ? area.name + " · " : "") + "Census area " + area.id;
+  $("detail").textContent = label + " · " + formatLayer(key, layers[key].value(area));
 }
 
-function selectSector(id, center = false) {
-  const shape = sectorPaths.get(id);
+function selectArea(id, scale, center = false) {
+  const isSector = scale === "sector";
+  const shape = (isSector ? sectorPaths : districtPaths).get(id);
   if (!shape) return;
-  sectorPaths.get(selected)?.classList.remove("selected");
-  selected = id;
+  map.querySelector(".selected")?.classList.remove("selected");
+  const switched = pilotMode !== isSector;
+  pilotMode = isSector;
+  selected = (isSector ? sectorIndicators : districtIndicators).get(id);
   shape.classList.add("selected");
-  $("map-area").value = id;
-  describeSelection(id);
+  $("map-sector-control").hidden = !isSector;
+  if (isSector) {
+    lastSector = id;
+    $("map-district").value = pilotId;
+    $("map-area").value = id;
+  } else {
+    lastDistrict = id;
+    $("map-district").value = id;
+    $("map-area").value = "";
+  }
+  if (switched) {
+    if (isSector) focusArea(pilotBox.x + pilotBox.width / 2, pilotBox.y + pilotBox.height / 2, 8);
+    else focusArea(180, 175, 1);
+    setLayer($("map-layer").value);
+  }
+  describeSelection(selected);
   if (center) {
     const box = shape.getBBox();
-    focusArea(ox + (box.x + box.width / 2) * sx, oy + (box.y + box.height / 2) * sy, Math.max(15, view.k));
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    if (isSector) focusArea(ox + x * sx, oy + y * sy, Math.max(15, view.k));
+    else focusArea(x, y, Math.min(10, 165 / Math.max(box.width, box.height)));
   }
-  map.dispatchEvent(new CustomEvent("sectorchange", { detail: id }));
+  map.dispatchEvent(new CustomEvent("areachange", { detail: selected }));
 }
 
 function tab(org) {
@@ -233,24 +254,15 @@ function tab(org) {
   $("map-profile-link").hidden = !org;
   $("org-tab").setAttribute("aria-pressed", org);
   $("citizen-tab").setAttribute("aria-pressed", !org);
-  if (org && !selected) {
-    focusPilot();
-    selectSector(priorityOrder[0]?.id ?? reference);
-  } else if (org && sectors.classList.contains("map-hidden")) focusPilot();
+  if (org && !selected) selectArea(districtPriorityOrder[0]?.id ?? pilotId, "district");
   if (org) setLayer("priority");
 }
 
 $("citizen-tab").onclick = () => tab(false);
 $("org-tab").onclick = () => tab(true);
 $("zoom").onclick = () => {
-  if (sectors.classList.contains("map-hidden")) {
-    focusPilot();
-    if (!selected) selectSector(reference);
-  } else {
-    focusArea(180, 175, 1);
-    setLayer("heat");
-    $("detail").textContent = "Choose a district or explore the Brasilândia pilot.";
-  }
+  if (pilotMode) selectArea(lastDistrict ?? pilotId, "district");
+  else selectArea(lastSector, "sector");
 };
 $("map-in").onclick = () => stepZoom(1.55);
 $("map-out").onclick = () => stepZoom(1 / 1.55);
@@ -259,21 +271,19 @@ for (const id of [...sectorPaths.keys()].sort()) {
   const name = window.ybiraOrganizationData[id]?.[9];
   $("map-area").add(new Option((name ? name + " · " : "") + id, id));
 }
-$("map-area").onchange = event => selectSector(event.target.value, true);
-$("map-layer").onchange = event => setLayer(event.target.value, true);
+for (const area of [...districtIndicators.values()].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))) {
+  $("map-district").add(new Option(area.name, area.id));
+}
+$("map-area").onchange = event => selectArea(event.target.value, "sector", true);
+$("map-district").onchange = event => selectArea(event.target.value, "district", true);
+$("map-layer").onchange = event => setLayer(event.target.value);
 
 map.addEventListener("click", event => {
   if (suppressClick) return;
   const area = event.target.closest("[data-sector], [data-district]");
   if (!area) return;
-  if (area.dataset.sector) selectSector(area.dataset.sector);
-  else if (area.dataset.district === pilotName) {
-    focusPilot();
-    selectSector(selected ?? reference);
-  } else {
-    const display = $("map-layer").value === "heat" ? area.dataset.temperature.replace(",", ".") : "Sector data available in the Brasilândia pilot";
-    $("detail").textContent = area.dataset.district + " · " + (display || "No temperature data");
-  }
+  if (area.dataset.sector) selectArea(area.dataset.sector, "sector");
+  else selectArea(area.dataset.district, "district");
 });
 map.addEventListener("wheel", event => {
   event.preventDefault();
