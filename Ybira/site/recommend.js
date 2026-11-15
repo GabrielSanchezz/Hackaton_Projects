@@ -2,6 +2,23 @@
 
 // Width and bed thresholds: Manual Técnico de Arborização Urbana, Table 01.
 // Automated branches: Chave Arborizar, Fig. 3 (UNESP, printed p. 35), steps 2–12 and 18–27.
+function plantingBedLimits(total) {
+  if (!Number.isFinite(total) || total < 1.9 || total === 2.8) return null;
+  if (total < 2.1) return { minWidth: 0.6, minArea: 0.6, trunkLimit: 50 };
+  if (total < 2.4) return { minWidth: 0.8, minArea: 0.8, trunkLimit: 70 };
+  if (total < 2.8) return { minWidth: 1, minArea: 1.2, trunkLimit: 90 };
+  return { minWidth: 1.4, minArea: 2, trunkLimit: 120 };
+}
+
+function plantingBedProblem(total, free, width, area) {
+  if (width > total - free + 1e-6) return "The planting bed would take up the clear space reserved for pedestrians.";
+  const limits = plantingBedLimits(total);
+  if (!limits) return "The guide leaves this exact width unclear. Confirm the site with the city.";
+  const { minWidth, minArea } = limits;
+  if (width < minWidth || area < minArea) return `This bed is too small for planting under the guide. For this sidewalk, leave at least ${minWidth.toFixed(2)} m of bed width and ${minArea.toFixed(2)} m² of open soil.`;
+  return "";
+}
+
 function recommendTrees(site, catalog) {
   const pending = (message) => ({ message, trees: [] });
   const measure = (value) => value == null || value === "" ? NaN : Number(value);
@@ -19,11 +36,9 @@ function recommendTrees(site, catalog) {
     : "Confirm whether a tree already occupies the proposed planting point.");
   if (!["Presente", "Ausente"].includes(site.wires)) return pending("Confirm whether overhead wires are present.");
   if (![bedWidth, bedArea].every(Number.isFinite)) return pending("Enter the planned width and area of the planting bed.");
-  if (bedWidth > total - free + 1e-6) return pending("The planting bed would take up the clear space reserved for pedestrians.");
-  if (total === 2.8) return pending("The published width bands leave 2.80 m ambiguous. Confirm the site with the municipal team.");
-  const [minWidth, minArea, trunkLimit] = total < 2.1 ? [0.6, 0.6, 50]
-    : total < 2.4 ? [0.8, 0.8, 70] : total < 2.8 ? [1, 1.2, 90] : [1.4, 2, 120];
-  if (bedWidth < minWidth || bedArea < minArea) return pending(`The guide calls for a bed at least ${minWidth} m wide with ${minArea} m² of permeable area for this sidewalk width.`);
+  const bedProblem = plantingBedProblem(total, free, bedWidth, bedArea);
+  if (bedProblem) return pending(bedProblem);
+  const { trunkLimit } = plantingBedLimits(total);
   if (site.clearance === "0") return pending("The point does not meet the minimum clearances in Table 03. Choose another point or request an assessment.");
   if (!["1", "2", "3"].includes(site.clearance)) return pending("Verify the clearance column from Table 03 before requesting a ranking.");
 

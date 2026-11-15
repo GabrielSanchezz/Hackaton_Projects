@@ -21,6 +21,7 @@
       label: "How wide is the whole sidewalk?",
       help: "At the spot you picked, stretch a tape across the sidewalk from the property line to the inner edge of the curb. Leave out the curb itself. Enter meters. For example, 200 cm is 2.00 m.",
       measure: true,
+      minimum: "City guide minimum: 1.90 m total, excluding the curb.",
     },
     wires: {
       label: "Are there wires above the spot?",
@@ -36,15 +37,16 @@
       label: "How much room will people have to walk?",
       help: "Find the narrowest part beside the planned planting bed. Measure across the clear walking space, from the edge of the bed to the nearest wall, pole, step or other obstacle. The guide calls for at least 1.20 m.",
       measure: true,
+      minimum: "City guide minimum: 1.20 m of clear walking space.",
     },
     bedWidth: {
       label: "How wide is the patch of soil?",
-      help: "Measure from one edge of the open soil to the other, across the sidewalk. Count only the patch where rain can soak in. Keep pavement and the clear walking space out of this measurement.",
+      help: "Follow the Width arrow. Measure the open soil across the sidewalk, from the curb side toward the walking path.",
       measure: true,
     },
     bedLength: {
       label: "How long is the patch of soil?",
-      help: "Measure along the sidewalk, parallel to the street. If the patch is irregular, use the length of a rectangle that fits fully inside it, and use that rectangle's width for the previous answer. Ybirá multiplies the two measurements.",
+      help: "Follow the Length arrow. Measure the open soil along the sidewalk, parallel to the curb. If the bed is irregular, measure a rectangle that fits inside it.",
       measure: true,
     },
     clearance: {
@@ -183,8 +185,66 @@
       unit.id = `unit-${name}`;
       row.append(unit);
     }
-    block.append(heading, row, copy);
+    const limits = plantingBedLimits(Number(answers.total));
+    const minimum = name === "bedWidth" && limits ? `Minimum width: ${limits.minWidth.toFixed(2)} m.` : spec.minimum;
+    block.append(heading);
+    if (minimum) {
+      const hint = element("p", minimum, "small measurement-minimum");
+      hint.id = `minimum-${name}`;
+      control.setAttribute("aria-describedby", `unit-${name} ${hint.id}`);
+      block.append(hint);
+    }
+    block.append(row, copy);
     return block;
+  }
+
+  function plantingBedDiagram() {
+    const diagram = element("div", "", "bed-diagram");
+    diagram.setAttribute("role", "img");
+    diagram.setAttribute("aria-label", "View from above. The soil bed sits between the curb and the walking space. Length runs along the curb. Width runs from the curb side toward the walking space.");
+    const bed = element("div", "", "diagram-bed");
+    bed.append(element("span", "Open soil", "diagram-soil"), element("span", "↔ Length", "diagram-length"), element("span", "↕ Width", "diagram-width"));
+    diagram.append(element("div", "Street", "diagram-street"), element("div", "Curb", "diagram-curb"), bed, element("div", "Clear walking space", "diagram-walk"));
+    return diagram;
+  }
+
+  function meters(value) {
+    const decimal = value.trim().replace(",", ".");
+    return /^\d+(?:\.\d{1,2})?$/.test(decimal) && Number.isFinite(Number(decimal)) ? decimal : null;
+  }
+
+  function plantingBedArea(width, length) {
+    return (Math.round(Number(width) * 100) * Math.round(Number(length) * 100)) / 10000;
+  }
+
+  function showBedMeasurements(container) {
+    const total = Number(answers.total);
+    const free = Number(answers.free);
+    const limits = plantingBedLimits(total);
+    const rule = limits
+      ? `City guide minimum: ${limits.minWidth.toFixed(2)} m wide and ${limits.minArea.toFixed(2)} m² of open soil.`
+      : "Ask the city to confirm the minimum for this sidewalk width.";
+    const info = element("p", rule, "small measurement-minimum");
+    const explanation = element("p", "Area is width × length. Count only open soil. A bed below either minimum is too small for planting.", "small");
+    const width = question("bedWidth");
+    const length = question("bedLength");
+    const feedback = element("p", "", "bed-area-feedback");
+    feedback.setAttribute("aria-live", "polite");
+    container.append(info, plantingBedDiagram(), width, length, explanation, feedback);
+    function updateArea() {
+      const measuredWidth = meters(form.elements.bedWidth.value);
+      const measuredLength = meters(form.elements.bedLength.value);
+      feedback.replaceChildren();
+      if (measuredWidth === null || measuredLength === null) return;
+      const area = plantingBedArea(measuredWidth, measuredLength);
+      const problem = plantingBedProblem(total, free, Number(measuredWidth), area);
+      const formatted = area.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+      feedback.append(element("strong", `Your open soil: ${formatted} m². `), document.createTextNode(problem || "Your measurements meet these size requirements."));
+      feedback.classList.toggle("bed-area-problem", Boolean(problem));
+    }
+    width.addEventListener("input", updateArea);
+    length.addEventListener("input", updateArea);
+    updateArea();
   }
 
   function nextStep() {
@@ -199,8 +259,9 @@
     if (!answers.tree) return "tree";
     if (!answers.free) return "free";
     if (Number(answers.free) < 1.2 || Number(answers.free) > Number(answers.total)) return null;
-    if (!answers.bedWidth) return "bedWidth";
-    if (!answers.bedLength) return "bedLength";
+    if (!answers.bedWidth || !answers.bedLength) return "bed";
+    const area = plantingBedArea(answers.bedWidth, answers.bedLength);
+    if (plantingBedProblem(Number(answers.total), Number(answers.free), Number(answers.bedWidth), area)) return null;
     if (!answers.clearance) return "clearance";
     if (answers.clearance === "0") return null;
     if (needsSiteVisit) return answers.code ? null : "code";
@@ -218,10 +279,12 @@
     result.hidden = true;
     const content = $("assessment-fields");
     content.replaceChildren();
-    $("assessment-title").textContent = target === "review" ? "Check what Ybirá understood" : "Tell us a little more";
+    $("assessment-title").textContent = target === "review" ? "Check what Ybirá understood"
+      : target === "bed" ? "Measure the planting bed" : "Tell us a little more";
     $("assessment-note").textContent = target === "review" ? "Correct anything that looks off before you continue." : "";
-    for (const name of target === "review" ? extracted : [target]) content.append(question(name));
-    $("assessment-skip").hidden = !["total", "free", "wires", "tree", "bedWidth", "bedLength", "clearance", "setback", "traffic"].includes(target);
+    if (target === "bed") showBedMeasurements(content);
+    else for (const name of target === "review" ? extracted : [target]) content.append(question(name));
+    $("assessment-skip").hidden = !["total", "free", "wires", "tree", "bed", "clearance", "setback", "traffic"].includes(target);
     $("assessment-back").textContent = history.length ? "Back" : "Back to description";
     $("assessment-next").textContent = target === "code" ? "Find my trees" : "Continue";
     $("assessment-title").focus();
@@ -260,7 +323,7 @@
   }
 
   function evaluate(site = answers) {
-    const bedArea = (Math.round(Number(site.bedWidth) * 100) * Math.round(Number(site.bedLength) * 100)) / 10000;
+    const bedArea = plantingBedArea(site.bedWidth, site.bedLength);
     return recommendTrees({ ...site, bedArea }, catalog);
   }
 
@@ -359,14 +422,14 @@
     const updates = Object.fromEntries(new FormData(form));
     for (const [name, value] of Object.entries(updates)) {
       if (!questions[name].measure || !value.trim()) continue;
-      const meters = value.trim().replace(",", ".");
-      if (!/^\d+(?:\.\d{1,2})?$/.test(meters) || !Number.isFinite(Number(meters))) {
+      const measurement = meters(value);
+      if (measurement === null) {
         const control = form.elements.namedItem(name);
         control.setCustomValidity("Enter meters, for example 1.30 or 1,30.");
         control.reportValidity();
         return;
       }
-      updates[name] = meters;
+      updates[name] = measurement;
     }
     if (step === "review" && updates.place && updates.place !== answers.place && updates.place !== "calcada") {
       updates.total = updates.free = "";

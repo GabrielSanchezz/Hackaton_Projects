@@ -17,6 +17,20 @@
 .help-copy { margin-top: 8px; padding: 12px 14px; border-left: 3px solid #4a7860; border-radius: 4px; background: #fff; color: #364f43; font-size: 14px; }
 .help-copy p:last-child { margin-bottom: 0; }
 .distance-list { padding-left: 18px; margin: 0 0 10px; }
+.measurement-minimum { margin: 2px 0 8px; font-weight: 700; }
+.bed-diagram { margin: 12px 0; border: 1px solid #acc0b1; border-radius: 10px; overflow: hidden; font-size: 13px; }
+.diagram-street, .diagram-curb, .diagram-walk { padding: 3px 10px; text-align: center; }
+.diagram-street { background: #38464a; color: #fff; }
+.diagram-curb { background: #dce0dc; color: #364f43; }
+.diagram-walk { border-top: 1px dashed #829384; background: #fff; }
+.diagram-bed { position: relative; min-height: 96px; margin: 6px 24px; border: 2px solid #387657; border-radius: 6px; background: #dce9d2; }
+.diagram-soil, .diagram-length { position: absolute; left: 10px; right: 72px; text-align: center; }
+.diagram-soil { top: 15px; color: #31543d; }
+.diagram-length { bottom: 12px; border-top: 1px solid #387657; }
+.diagram-width { position: absolute; inset: 8px 5px 8px auto; display: grid; place-items: center; padding-left: 5px; border-left: 1px solid #387657; }
+.diagram-length, .diagram-width { font-weight: 700; color: #184637; }
+.bed-area-feedback:not(:empty) { padding: 10px; border-radius: 6px; background: #e6f0e2; font-size: 14px; }
+.bed-area-feedback.bed-area-problem { background: #f5e7dd; color: #783a26; }
 .text-button { background: transparent; border-color: transparent; text-decoration: underline; text-underline-offset: 3px; }
 .form-actions button { min-height: 44px; }
 .result { padding: 16px; background: #f4f6ef; border: 1px solid #cddbd0; border-radius: 12px; font-weight: 400; }
