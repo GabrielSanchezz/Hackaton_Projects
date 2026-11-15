@@ -61,7 +61,8 @@ function tab(org) {
 }
 $("citizen-tab").onclick = () => tab(false);
 $("org-tab").onclick = () => tab(true);
-const codes = [...new Set(data.catalog.flatMap((tree) => tree.codes))].sort((a,b) => a.localeCompare(b,"en-US",{numeric:true}));
+const catalog = window.ybiraCatalog;
+const codes = [...new Set(catalog.flatMap((tree) => tree.codes))].sort((a,b) => a.localeCompare(b,"en-US",{numeric:true}));
 for (const code of codes) $("codes").add(new Option(code, code));
 for (const s of data.sectors.filter((s) => s.both).sort((a,b) => b.without-a.without).slice(0,3)) {
   const button = document.createElement("button");
@@ -75,9 +76,11 @@ const field = (name) => plant.elements.namedItem(name);
 function showMeasurements() {
   const place = field("place").value;
   $("sidewalk-fields").hidden = Boolean(place && place !== "calcada");
+  $("sidewalk-checks").hidden = Boolean(place && place !== "calcada");
   $("space-field").hidden = !place || place === "calcada";
 }
 field("place").addEventListener("change", showMeasurements);
+plant.addEventListener("input", () => $("result").replaceChildren());
 
 $("interpret").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -122,6 +125,7 @@ $("interpret").addEventListener("submit", async (event) => {
     if (input.value) count++;
   }
   showMeasurements();
+  if (count) $("result").replaceChildren();
   const mode = automatic ? "Interpreted by Groq AI." : "AI is unavailable. Basic text matching was used.";
   status.textContent = count
     ? `${mode} Check the filled fields and add any missing information.`
@@ -130,26 +134,25 @@ $("interpret").addEventListener("submit", async (event) => {
 
 plant.addEventListener("submit", (event) => {
   event.preventDefault();
-  const fields = new FormData(event.target);
-  const place = fields.get("place");
-  const totalInput = fields.get("total");
-  const freeInput = fields.get("free");
-  const total = Number(totalInput);
-  const free = Number(freeInput);
-  const code = fields.get("code");
+  const assessment = recommendTrees(Object.fromEntries(new FormData(plant)), catalog);
   const result = $("result");
-  if (!place) result.textContent = "Confirm the site type to continue.";
-  else if (place !== "calcada") result.textContent = "This version suggests species for sidewalks. Use the form details to request a site assessment for this location.";
-  else if (!totalInput || !freeInput) result.textContent = "Enter the total sidewalk width and the clear space available for pedestrians.";
-  else if (free > total) result.textContent = "The clear walking space must fit within the total width. Check your measurements.";
-  else if (total < 1.9 || free < 1.2) result.textContent = "These measurements are below the thresholds in the planting guide. Contact São Paulo 156 for help.";
-  else if (!fields.get("wires") || !code) result.textContent = "Confirm overhead wiring and request a site assessment using the Chave Arborizar to identify candidate species.";
-  else {
-    const candidates = data.catalog.filter((tree) => tree.codes.includes(code) && tree.priority)
-      .sort((a,b) => b.stock-a.stock).slice(0,2);
-    result.textContent = candidates.length
-      ? `Catalog options for ${code}: ${candidates.map((s) => s.name).join(" and ")}. Site assessment and stock availability are pending.`
-      : `No priority species in the catalog matches code ${code}. Contact the urban forestry team.`;
+  result.textContent = assessment.message;
+  if (!assessment.trees.length) return;
+  const ranking = document.createElement("ol");
+  ranking.className = "tree-ranking";
+  for (const tree of assessment.trees) {
+    const item = document.createElement("li");
+    const name = document.createElement("strong");
+    name.textContent = tree.name;
+    const facts = document.createElement("p");
+    const stock = tree.stock === null ? "Stock unconfirmed" : `${tree.stock} seedlings listed on Oct 27, 2026`;
+    facts.textContent = `${tree.scientific} · ${tree.height.join("–")} m adult height · ${stock}`;
+    const reason = document.createElement("p");
+    const use = tree.established ? "Established sidewalk species" : "Potential sidewalk species in the manual";
+    reason.textContent = `Matches ${assessment.code} and the trunk-size limit · Native to São Paulo · ${use}.`;
+    item.append(name, facts, reason);
+    ranking.append(item);
   }
+  result.append(ranking);
 });
 draw(false);

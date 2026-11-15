@@ -41,12 +41,27 @@
         <label>Overhead wires<select name="wires"><option value="">Unknown</option><option value="Presente">Present</option><option value="Ausente">Absent</option></select></label>
         <label>Existing tree at the site<select name="tree"><option value="">Unknown</option><option value="Presente">Present</option><option value="Ausente">Absent</option></select></label>
         <details><summary>How to measure</summary><p>Measure the total sidewalk width excluding the curb. Enter how much clear walking space would remain at the planting point.</p></details>
-        <label>Chave Arborizar planting code, if verified
-          <select name="code" id="codes"><option value="">Unknown</option></select>
-        </label>
-        <button type="submit">See planting guidance</button>
+        <div id="sidewalk-checks">
+          <div class="fields">
+            <label>Planting bed width (m)<input name="bedWidth" type="number" min="0" step="0.01"></label>
+            <label>Permeable bed area (m²)<input name="bedArea" type="number" min="0" step="0.01"></label>
+          </div>
+          <label>Verified clearances
+            <select name="clearance"><option value="">Needs a site check</option><option value="1">Meets column 1 only (small trees)</option><option value="2">Meets column 2 (medium trees)</option><option value="3">Meets column 3 (large trees)</option><option value="0">Does not meet column 1</option></select>
+          </label>
+          <p class="small">Use the highest column met in <a href="https://drive.prefeitura.sp.gov.br/cidade/secretarias/subprefeituras/upload/se/MARBOURB.pdf#page=27">Table 03 of the municipal guide</a>. Check distances to intersections, poles, utilities and existing trees on site.</p>
+          <div class="fields">
+            <label>Building set back from the sidewalk?<select name="setback"><option value="">Unknown</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+            <label>Traffic in the adjacent lane<select name="traffic"><option value="">Unknown</option><option value="cars">Mostly cars</option><option value="bus">Bus corridor or frequent heavy vehicles</option></select></label>
+          </div>
+          <label>Verified Chave Arborizar code (only for wider sidewalks or sites with overhead wires)
+            <select name="code" id="codes"><option value="">Calculate when supported</option></select>
+          </label>
+        </div>
+        <button type="submit">Rank suitable trees</button>
       </form>
       <div class="result" id="result" aria-live="polite"></div>
+      <details><summary>How the ranking works</summary><p>The guide's site conditions and the locally native species list determine which trees are eligible. Species listed in the <a href="https://prefeitura.sp.gov.br/documents/d/meio_ambiente/estoque-de-mudas-dau-2-2026-10-27t131624-090-pdf">Oct 27, 2026 nursery inventory</a> rank first, then established use and listed stock count. The site shows up to four candidates.</p></details>
       <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/parques/284396">Request free tree planting through São Paulo 156</a>
     </section>
     <section class="panel" id="org" hidden>
@@ -59,6 +74,8 @@
   <footer>Sources: <a href="https://novogeosampa.prefeitura.sp.gov.br/">GeoSampa (CC BY-SA)</a>, <a href="https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/">IBGE</a>, <a href="https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-temperature">Landsat/USGS</a> and <a href="https://prefeitura.sp.gov.br/meio_ambiente/w/publicacoes_svma/188452">Municipal planting guide</a>.</footer>
 </main>
 <script src="data.js"></script>
+<script src="catalog.js"></script>
+<script src="recommend.js"></script>
 <script src="interpretar-local.js"></script>
 <script src="app.js"></script>
 </html>
