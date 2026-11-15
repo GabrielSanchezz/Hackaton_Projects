@@ -45,3 +45,5 @@ function rankAreas(indicatorMap) {
 
 const priorityOrder = rankAreas(sectorIndicators);
 const districtPriorityOrder = rankAreas(districtIndicators);
+
+window.ybiraPriority = { sectorIndicators, districtIndicators, priorityOrder, districtPriorityOrder, priorityFactors };

@@ -1,6 +1,10 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { runInNewContext } from "node:vm";
+import "./map-environment.js";
+import "../age-data.js";
+import "../district-data.js";
+import "../organization-data.js";
+import "../priority.js";
+import "../data.js";
+import "../clinic-data.js";
 
 export const mapSource = {
   id: "map",
@@ -12,9 +16,7 @@ const clinicSource = {
   title: "GeoSampa · São Paulo public health facility locations",
   url: "https://novogeosampa.prefeitura.sp.gov.br/",
 };
-const areaFiles = ["age-data.js", "district-data.js", "organization-data.js", "priority.js", "data.js"];
 const bounds = { west: -46.71550388, south: -23.48136555, east: -46.66351132, north: -23.41518085 };
-const asset = name => readFileSync(join(process.cwd(), name), "utf8");
 const round = (value, scale = 1) => Number.isFinite(value) ? Math.round(value * scale * 100) / 100 : null;
 const wordMatch = (text, word) => (" " + text + " ").includes(" " + word + " ");
 
@@ -35,18 +37,12 @@ function box(path) {
   return [Math.min(...x), Math.min(...y), Math.max(...x), Math.max(...y)];
 }
 
-let parsed;
-function readMap() {
-  if (parsed) return parsed;
-  // Execute only public data and the fixed ranking script shipped with this deployment.
-  // No request input is ever evaluated or used to resolve a filename.
-  const data = areaFiles.map(asset).join("\n;\n");
-  const read = runInNewContext(data + "\n;({ districtIndicators, sectorIndicators, districtPriorityOrder, priorityOrder, priorityFactors, geometry: window.ybira });", { window: {} }, { timeout: 1000 });
-  const marker = asset("ubs.js").match(/const facilities = (\[[\s\S]*?\]);/);
-  const clinics = marker ? JSON.parse(marker[1].replace(/,\s*\]$/, "\n]")) : [];
-  parsed = { ...read, clinics, paths: shapesById(read.geometry), pilotBox: box(read.geometry.outlines[1]) };
-  return parsed;
-}
+const mapData = {
+  ...window.ybiraPriority,
+  clinics: window.ybiraClinicData,
+  paths: shapesById(window.ybira),
+  pilotBox: box(window.ybira.outlines[1]),
+};
 
 function getClinicList(area, map) {
   const path = map.paths.get(area.id);
@@ -140,7 +136,7 @@ function compactRanking(rows) {
 }
 
 export function areaContext(question, areaId, previousQuestion) {
-  const map = readMap();
+  const map = mapData;
   const explicit = lookupAreas(question, areaId, map);
   const selected = map.sectorIndicators.get(areaId) ?? map.districtIndicators.get(areaId);
   const earlier = previousQuestion ? lookupAreas(previousQuestion, areaId, map) : { areas: [] };
@@ -160,6 +156,17 @@ export function areaContext(question, areaId, previousQuestion) {
     ambiguousCommunityNames: explicit.ambiguous,
     notes: "Areas are official São Paulo districts or the Brasilândia pilot census sectors. City districts and pilot sectors are scored within their own scale; compare numerical scores only within the same scale. If the user names an unsupported place, say its data is unavailable. Older residents and clinics are contextual layers, outside the score. All score contributions are computed by the app.",
   };
+  const [first, second] = contextual.areas;
+  if (first?.scale === second?.scale && first?.priorityScore != null && second?.priorityScore != null) {
+    contextual.comparison = {
+      first: first.name,
+      second: second.name,
+      differenceInPriorityPoints: round(first.priorityScore - second.priorityScore),
+      differenceByFactor: first.priorityContributions.map(({ factor, points }, i) => ({
+        factor, firstMinusSecondPoints: round(points - second.priorityContributions[i].points),
+      })).sort((a, b) => Math.abs(b.firstMinusSecondPoints) - Math.abs(a.firstMinusSecondPoints)),
+    };
+  }
   if (/\b(ranking|rank|prioritario|prioritarios|prioritarias|priority|pontuacao|score|prioridade|primeiro|highest)\b/.test(q)) {
     contextual.priorityLeaders = (contextAreas[0]?.scale === "sector" || /\b(setores|census areas)\b/.test(q))
       ? { scale: "sector", leaders: compactRanking(map.priorityOrder) }

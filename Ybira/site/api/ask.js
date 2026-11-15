@@ -21,7 +21,7 @@ const rules = [
   "Cite evidence by returning only the IDs of sources that substantively support the answer. Do not write source links or ID markers in your answer.",
   "Use evidenceStatus supported only if the answer contains a factual claim based on at least one supplied source. Otherwise use insufficient and explain the gap or ask what the user means.",
   "Surface heat numbers are dated satellite surface snapshots, not air readings or a forecast. Race and age are aggregate context, never individual diagnoses. Use the correct geographic scale.",
-  "If asked to compare planting scores, use the provided contributions and distinguish score from field eligibility; scores compare only within the same scale.",
+  "If asked to compare planting scores, report the actual scores for the named areas and use the supplied comparison points to describe the strongest differences. Higher scores mean a higher priority for a field visit, not better conditions or field eligibility. Scores compare only within the same scale.",
   "Explain local conditions and any required field checks without granting permission, assessing electrical safety, prescribing work near a line, or treating the screen as a municipal decision.",
   "The action assess-sidewalk is optional and means opening the existing form, only for a request about an actual planting spot or measurements.",
   "For a named place outside the supplied data, say it is not covered; do not substitute the selected area unless the question refers to that selection.",
@@ -92,6 +92,7 @@ function languageFor(question) {
 }
 
 const visibleSources = docs => docs.map(({ title, url }) => ({ title, url }));
+const isScoreQuestion = question => /\b(score|ranking|rank|pontuacao|prioridade|priority)\b/.test(normalize(question));
 
 function fallback(question, language, clips, local) {
   const pt = language === "pt";
@@ -103,6 +104,11 @@ function fallback(question, language, clips, local) {
   const locale = pt ? "pt-BR" : "en-US";
   const format = number => number.toLocaleString(locale, { maximumFractionDigits: 2 });
   const introductory = pt ? "A IA está indisponível no momento. " : "The AI is temporarily unavailable. ";
+  const [first, second] = map?.details.areas ?? [];
+  if (map?.details.comparison && isScoreQuestion(question)) {
+    const scores = [first, second].map(area => area.name + ": " + format(area.priorityScore) + "/100").join("\n");
+    return message(introductory + (pt ? "Pontuações no mapa:\n" : "Scores in the map:\n") + scores, [map]);
+  }
   if (profile) {
     const items = [];
     if (profile.averageSurfaceTemperatureC !== null) items.push((pt ? "Superfície em 29/11/2025: " : "Surface heat on Nov 29, 2025: ") + format(profile.averageSurfaceTemperatureC) + " °C");
@@ -124,6 +130,11 @@ function cleanSource(source, language) {
   return { id: source.id, title: source.title, evidence: text.slice(0, 4700) };
 }
 
+function containsScore(answer, score) {
+  const normalized = answer.replace(/,/g, ".").match(/\b\d+\.\d+\b/g) ?? [];
+  return normalized.some(value => Math.abs(Number(value) - score) <= .051);
+}
+
 export default {
   async fetch(request) {
     if (request.method !== "POST") return response({ error: "method" }, 405);
@@ -143,12 +154,7 @@ export default {
     const areaId = typeof payload.areaId === "string" && /^\d{9}(?:\d{6})?$/.test(payload.areaId) ? payload.areaId : undefined;
     const previous = typeof payload.previousQuestion === "string" ? payload.previousQuestion.trim().slice(0, 500) : "";
     const language = languageFor(question + (terms(question).length < 4 ? " " + previous : ""));
-    let local = [];
-    try {
-      local = areaContext(question, areaId, previous);
-    } catch {
-      // Official planting documents remain available if deployment data cannot be read.
-    }
+    const local = areaContext(question, areaId, previous);
     const clips = retrieve(question, previous, Boolean(local.length));
     if (!process.env.GROQ_API_KEY || limited(request)) return response(fallback(question, language, clips, local));
 
@@ -180,6 +186,11 @@ export default {
       const used = [...new Set(reply.usedIds)].flatMap(id => context.find(source => source.id === id) ?? []);
       if (reply.evidenceStatus === "supported" && !used.length) return response(fallback(question, language, clips, local));
       const answer = reply.answer.trim();
+      const map = local.find(source => source.id === "map");
+      if (map?.details.comparison && isScoreQuestion(question)
+        && (!used.includes(map) || !map.details.areas.slice(0, 2).every(area => containsScore(answer, area.priorityScore)))) {
+        return response(fallback(question, language, clips, local));
+      }
       return response({ answer, sources: visibleSources(used), action: reply.action === "assess-sidewalk" ? reply.action : "none", mode: "ai" });
     } catch {
       return response(fallback(question, language, clips, local));
