@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/ask.js": {
+      "includeFiles": "{age-data,district-data,organization-data,priority,data,ubs}.js",
+      "maxDuration": 20
+    }
+  }
+}

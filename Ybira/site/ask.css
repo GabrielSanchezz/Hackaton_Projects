@@ -1,0 +1,29 @@
+.ask-panel { margin-bottom: 16px; }
+.ask-panel > summary { align-items: baseline; gap: 8px; margin: 0; color: #184637; }
+.ask-panel > summary strong { margin-right: .65rem; font-size: 19px; }
+.ask-panel > summary span { color: #486154; font-size: 14px; }
+.ask-body { border-top: 1px solid #d7e0da; margin-top: 14px; padding-top: 14px; }
+.ask-map-context { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; color: #254e3e; font-size: 14px; }
+.ask-map-context input { flex: 0 0 auto; width: auto; margin: .25rem 0 0; }
+.ask-suggestions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.ask-suggestions button { min-height: 44px; padding: 6px 10px; font-size: 13px; }
+.ask-messages { display: grid; gap: 10px; padding: 0; margin: 0 0 16px; list-style: none; }
+.ask-messages:empty { display: none; }
+.ask-message { max-width: 78ch; min-width: 0; border: 1px solid #d7e0da; border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; }
+.ask-message[data-speaker="user"] { justify-self: end; background: #edf4ee; }
+.ask-message[data-speaker="assistant"] { justify-self: start; background: #f6f7f0; }
+.ask-message p { white-space: pre-wrap; margin: 4px 0 0; }
+.ask-message ul { margin: 6px 0 0; padding-left: 20px; }
+.ask-message li { margin-bottom: 2px; }
+.ask-message button { margin-top: 8px; min-height: 44px; }
+.ask-message-meta { font-size: 12px; color: #486154; }
+#ask-form { margin-top: 12px; }
+#ask-form label { margin-bottom: 4px; }
+#ask-question { width: 100%; min-height: 66px; margin-bottom: 8px; border: 1px solid #9aaea1; border-radius: 6px; padding: 8px; background: white; color: inherit; font: inherit; resize: vertical; }
+#ask-submit:disabled { opacity: .65; cursor: wait; }
+#ask-status { margin: 8px 0 0; }
+#ask-map { min-height: 44px; }
+@media (max-width: 480px) {
+  .ask-panel > summary span { display: block; margin-left: 1rem; }
+  .ask-message { max-width: 100%; }
+}

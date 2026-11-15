@@ -5,6 +5,7 @@
 <title>Ybirá | Urban forestry</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="ubs.css">
+<link rel="stylesheet" href="ask.css">
 <header class="mast"><strong>Ybirá</strong><span>São Paulo · Brasilândia pilot</span></header>
 <main>
   <h1>Where should the next tree go?</h1>
@@ -13,6 +14,30 @@
     <button id="citizen-tab" aria-pressed="true">Residents</button>
     <button id="org-tab" aria-pressed="false">Organizations</button>
   </nav>
+  <details id="ask-panel" class="panel ask-panel">
+    <summary><strong>Ask Ybirá</strong><span>Planting rules, map data, and help planning a visit</span></summary>
+    <div class="ask-body">
+      <p class="small">Ask in English or Portuguese. Leave out personal details such as your address or phone number.</p>
+      <label id="ask-map-context" class="ask-map-context" hidden>
+        <input id="ask-use-area" type="checkbox" checked>
+        <span>Use map selection: <strong id="ask-area-name"></strong></span>
+      </label>
+      <div class="ask-suggestions" aria-label="Suggested questions">
+        <button type="button" data-ask-question="Can I plant a tree under overhead wires?">Planting under wires</button>
+        <button type="button" data-ask-question="Why is this area a planting priority, and what should I check on a visit?">Explain the map</button>
+        <button type="button" data-ask-question="How do I ask São Paulo 156 to plant a tree?">Request a tree through 156</button>
+      </div>
+      <ol id="ask-messages" class="ask-messages" aria-label="Conversation" role="log" aria-live="polite" aria-relevant="additions"></ol>
+      <form id="ask-form">
+        <label for="ask-question">Your question</label>
+        <textarea id="ask-question" name="question" rows="2" maxlength="600" required placeholder="What should I check before planting on my sidewalk?"></textarea>
+        <div class="form-actions">
+          <button type="submit" id="ask-submit">Ask Ybirá</button>
+        </div>
+        <p class="small" id="ask-status" role="status"></p>
+      </form>
+    </div>
+  </details>
   <div class="grid">
     <section class="panel audience-panel" id="citizen">
       <h2>Find a tree for your sidewalk</h2>
@@ -96,6 +121,7 @@
       <div class="legend" id="map-legend"></div>
       <p class="small">Gray areas lack comparable data for the selected layer.</p>
       <p id="detail" aria-live="polite"></p>
+      <button type="button" id="ask-map" class="text-button" hidden>Ask about this area</button>
       <a id="map-profile-link" href="#profile-title" hidden>See the selected area’s charts</a>
     </section>
   </div>
@@ -113,4 +139,5 @@
 <script src="ubs.js"></script>
 <script src="organizations.js"></script>
 <script src="planting.js"></script>
+<script src="ask.js"></script>
 </html>
