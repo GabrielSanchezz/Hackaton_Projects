@@ -6,39 +6,91 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="ubs.css">
 <link rel="stylesheet" href="ask.css">
-<header class="mast"><strong>Ybirá</strong><span>São Paulo · Brasilândia pilot</span></header>
-<main>
-  <h1>Where should the next tree go?</h1>
-  <p class="intro">Explore surface heat and street trees. Check the site before choosing a species.</p>
-  <nav aria-label="Audience">
-    <button id="citizen-tab" aria-pressed="true">Residents</button>
-    <button id="org-tab" aria-pressed="false">Organizations</button>
+<link rel="stylesheet" href="design.css">
+<header class="site-header">
+  <a class="brand" href="#home" data-view="home"><svg class="brand-tree" aria-hidden="true"><use href="identity.svg#tree"></use></svg><strong>Ybirá</strong></a>
+  <span class="brand-description">Urban forestry<br>and climate justice</span>
+  <nav class="header-nav" aria-label="Main navigation">
+    <a href="#map" data-view="map">Map</a><a href="#about" data-view="about">About</a><a href="#how" data-view="how">How it works</a>
   </nav>
-  <details id="ask-panel" class="panel ask-panel">
-    <summary><strong>Ask Ybirá</strong><span>Planting rules, map data, and help planning a visit</span></summary>
+  <a class="header-action" href="#chat" data-view="chat"><svg class="header-mascot" aria-hidden="true"><use href="identity.svg#mascot"></use></svg> Ask Ybirá</a>
+</header>
+<main class="site-main">
+  <section id="home-view" class="home-view" aria-labelledby="home-title">
+    <div class="hero-content">
+      <h1 id="home-title">Where should the next <span class="leaf-underline">tree go?</span></h1>
+      <p class="hero-intro">Explore São Paulo’s heat map and find the right tree for your sidewalk.</p>
+      <div class="entry-grid">
+        <a class="entry-card" href="#residents" data-view="residents">
+          <span class="entry-icon"><svg class="icon" aria-hidden="true"><use href="identity.svg#home"></use></svg></span>
+          <strong>Residents</strong><span>Neighborhood map and planting guide</span>
+          <span class="entry-arrow"><svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></span>
+        </a>
+        <a class="entry-card chat-entry" href="#chat" data-view="chat">
+          <svg class="entry-mascot" aria-hidden="true"><use href="identity.svg#mascot"></use></svg>
+          <strong>Ask Ybirá</strong><span>Ask about trees, planting and the map.</span>
+          <span class="chat-call">Start chatting <svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></span>
+        </a>
+        <a class="entry-card" href="#organizations" data-view="organizations">
+          <span class="entry-icon"><svg class="icon" aria-hidden="true"><use href="identity.svg#building"></use></svg></span>
+          <strong>NGOs &amp; Government</strong><span>Planting data and field planning</span>
+          <span class="entry-arrow"><svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></span>
+        </a>
+      </div>
+      <div class="home-links">
+        <a class="map-teaser" href="#map" data-view="map"><svg id="heat-preview" viewBox="0 0 360 350" aria-hidden="true"></svg><strong>São Paulo<br>heat map</strong><svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
+        <span class="home-benefit"><span class="pill-icon"><svg class="icon" aria-hidden="true"><use href="identity.svg#temperature"></use></svg></span> Less heat</span>
+        <span class="home-benefit"><span class="pill-icon"><svg class="icon" aria-hidden="true"><use href="identity.svg#leaf"></use></svg></span> More shade</span>
+      </div>
+    </div>
+  </section>
+  <section id="chat-view" class="chat-view" aria-labelledby="chat-title">
+    <div class="chat-heading"><svg class="chat-mascot" aria-hidden="true"><use href="identity.svg#mascot"></use></svg><h1 id="chat-title">Ask Ybirá</h1></div>
+  <details id="ask-panel" class="panel ask-panel" open>
+    <summary class="visually-hidden">Ask Ybirá conversation</summary>
     <div class="ask-body">
       <p class="small">Ask in English or Portuguese. Leave out personal details such as your address or phone number.</p>
       <label id="ask-map-context" class="ask-map-context" hidden>
         <input id="ask-use-area" type="checkbox" checked>
         <span>Use map selection: <strong id="ask-area-name"></strong></span>
       </label>
-      <div class="ask-suggestions" aria-label="Suggested questions">
-        <button type="button" data-ask-question="Can I plant a tree under overhead wires?">Planting under wires</button>
-        <button type="button" data-ask-question="Why is this area a planting priority, and what should I check on a visit?">Explain the map</button>
-        <button type="button" data-ask-question="How do I ask São Paulo 156 to plant a tree?">Request a tree through 156</button>
-      </div>
       <ol id="ask-messages" class="ask-messages" aria-label="Conversation" role="log" aria-live="polite" aria-relevant="additions"></ol>
+      <p id="ask-welcome" class="ask-welcome">Ask about the area on the map, what to plant, or how to plan a site visit.</p>
+      <div class="ask-suggestions" aria-label="Suggested questions">
+        <button type="button" data-ask-question="Can I plant a tree under overhead wires?"><svg class="icon" aria-hidden="true"><use href="identity.svg#leaf"></use></svg> Trees</button>
+        <button type="button" data-ask-question="Why is this area a planting priority, and what should I check on a visit?"><svg class="icon" aria-hidden="true"><use href="identity.svg#map"></use></svg> Map</button>
+        <button type="button" data-ask-question="How do I ask São Paulo 156 to plant a tree?"><svg class="icon" aria-hidden="true"><use href="identity.svg#rules"></use></svg> Planting rules</button>
+        <button type="button" data-ask-question="How should I prepare a planting site visit?"><svg class="icon" aria-hidden="true"><use href="identity.svg#calendar"></use></svg> Site visit</button>
+      </div>
       <form id="ask-form">
         <label for="ask-question">Your question</label>
         <textarea id="ask-question" name="question" rows="2" maxlength="600" required placeholder="What should I check before planting on my sidewalk?"></textarea>
         <div class="form-actions">
-          <button type="submit" id="ask-submit">Ask Ybirá</button>
+          <button type="submit" id="ask-submit" aria-label="Ask Ybirá"><svg class="icon" aria-hidden="true"><use href="identity.svg#send"></use></svg></button>
         </div>
         <p class="small" id="ask-status" role="status"></p>
       </form>
     </div>
   </details>
-  <div class="grid">
+  </section>
+  <section id="workspace" class="workspace">
+    <aside class="side-rail">
+      <div class="side-brand"><span class="pill-icon" id="side-icon"><svg class="icon" aria-hidden="true"><use href="identity.svg#home"></use></svg></span><strong id="side-title">Residents</strong></div>
+      <nav aria-label="Workspace navigation">
+        <a href="#home" data-view="home"><svg class="icon" aria-hidden="true"><use href="identity.svg#home"></use></svg> Home</a>
+        <button type="button" id="citizen-tab" data-view="residents" aria-pressed="true"><svg class="icon" aria-hidden="true"><use href="identity.svg#tree"></use></svg> Residents</button>
+        <a href="#map" data-view="map"><svg class="icon" aria-hidden="true"><use href="identity.svg#map"></use></svg> Map</a>
+        <button type="button" id="org-tab" data-view="organizations" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="identity.svg#building"></use></svg> Organizations</button>
+        <a href="#chat" data-view="chat"><svg class="side-mascot" aria-hidden="true"><use href="identity.svg#mascot"></use></svg> Ask Ybirá</a>
+      </nav>
+    </aside>
+    <div class="workspace-content">
+    <div class="workspace-heading">
+      <h1 id="workspace-title">Explore your <span class="leaf-underline">neighborhood</span></h1>
+      <p id="workspace-intro">Compare surface heat, vegetation cover and street trees across São Paulo.</p>
+    </div>
+    <div id="dashboard-kpis" class="dashboard-kpis"></div>
+    <div class="grid workspace-grid">
     <section class="panel audience-panel" id="citizen">
       <h2>Find a tree for your sidewalk</h2>
       <form id="interpret" class="description">
@@ -68,7 +120,7 @@
     <section class="panel audience-panel" id="org" hidden>
       <h2>Plan a planting visit</h2>
       <p>Compare São Paulo’s 96 districts. Explore individual census areas in the Brasilândia pilot.</p>
-      <h3 id="priority-heading">Top priority districts</h3>
+      <h3 id="priority-heading" class="visually-hidden">Top priority districts</h3>
       <div id="targets" class="priority-list"></div>
       <section id="org-profile" aria-labelledby="profile-title"></section>
       <div class="form-actions visit-actions">
@@ -84,7 +136,7 @@
     </section>
     <section class="panel map-panel" aria-labelledby="map-title">
       <div class="row"><h2 id="map-title">São Paulo</h2><button id="zoom">Explore Brasilândia</button></div>
-      <label class="map-select" for="map-layer">Color the map by
+      <div class="map-toolbar"><label class="map-select" for="map-layer">Color the map by
         <select id="map-layer">
           <option value="heat">Average surface heat</option>
           <option value="priority">Planting priority score</option>
@@ -96,15 +148,21 @@
           <option value="olderShare">People aged 65+ · percentage</option>
           <option value="olderCount">People aged 65+ · count</option>
         </select>
-      </label>
+      </label><label class="map-select" for="map-district">Find a district<select id="map-district"><option value="">Select a district</option></select></label></div>
       <div id="map-stage">
         <svg id="map" viewBox="0 0 360 350" tabindex="0" aria-label="Surface temperature map of São Paulo. Use plus and minus to zoom and arrow keys to pan."></svg>
         <div class="map-controls" aria-label="Map controls">
           <button type="button" id="map-in" aria-label="Zoom in">+</button>
           <button type="button" id="map-out" aria-label="Zoom out">−</button>
         </div>
+        <div class="map-key"><p class="map-legend-title" id="legend-title"></p><div class="legend" id="map-legend"></div></div>
       </div>
-      <label class="map-select" for="map-district">Find a district<select id="map-district"><option value="">Select a district</option></select></label>
+      <p id="detail" aria-live="polite"></p>
+      <div class="map-shortcuts">
+        <button type="button" id="ask-map" class="text-button" hidden>Ask about this area</button>
+        <a id="map-profile-link" href="#profile-title" hidden>See the selected area’s charts</a>
+      </div>
+      <details class="map-extra"><summary>Map options and help</summary>
       <label class="map-select" id="map-sector-control" for="map-area" hidden>Find a census area in Brasilândia<select id="map-area"><option value="">Select a census area</option></select></label>
       <label class="ubs-toggle"><input type="checkbox" id="ubs-toggle"> Show public health clinics (UBSs)</label>
       <section id="ubs-panel" class="ubs-panel" aria-label="Public health clinics" hidden>
@@ -117,14 +175,30 @@
       </section>
       <p class="small">Scroll or pinch to zoom. Drag to move. Select an area to see its data.</p>
       <p class="small">District names appear as you zoom, followed by named IBGE communities where available.</p>
-      <p class="small map-legend-title" id="legend-title"></p>
-      <div class="legend" id="map-legend"></div>
       <p class="small">Gray areas lack comparable data for the selected layer.</p>
-      <p id="detail" aria-live="polite"></p>
-      <button type="button" id="ask-map" class="text-button" hidden>Ask about this area</button>
-      <a id="map-profile-link" href="#profile-title" hidden>See the selected area’s charts</a>
+      </details>
     </section>
-  </div>
+      <aside id="dashboard-aside" class="dashboard-aside">
+        <div id="resident-overview"></div>
+        <div id="organization-overview" hidden>
+          <section class="panel dashboard-card ranking-card"><h2><svg class="icon" aria-hidden="true"><use href="identity.svg#chart"></use></svg> <span id="ranking-card-title">District ranking</span></h2><div id="ranking-slot"></div></section>
+          <section class="panel dashboard-card score-card"><h2><svg class="icon" aria-hidden="true"><use href="identity.svg#leaf"></use></svg> Priority breakdown</h2><div id="score-overview"></div></section>
+        </div>
+      </aside>
+      <div id="workspace-actions" class="workspace-actions">
+        <a class="wide-action" href="#citizen" id="sidewalk-shortcut"><svg class="icon" aria-hidden="true"><use href="identity.svg#tree"></use></svg><span>Assess a sidewalk</span><svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
+        <button type="button" class="wide-action" id="export-view" hidden><svg class="icon" aria-hidden="true"><use href="identity.svg#download"></use></svg><span>Export selected area</span><svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></button>
+        <a class="wide-action primary-action" href="#chat" data-view="chat"><svg class="action-mascot" aria-hidden="true"><use href="identity.svg#mascot"></use></svg><span>Talk to Ask Ybirá</span><svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
+      </div>
+    </div>
+    </div>
+  </section>
+  <section id="about-view" class="info-view" aria-labelledby="about-title">
+    <article class="panel info-panel"><h1 id="about-title">More shade for São Paulo</h1><p>Ybirá helps residents and organizations decide where to inspect a sidewalk and which native trees to consider. The city map covers 96 districts, with census-area detail in the Brasilândia pilot.</p><a class="header-action" href="#map" data-view="map">Explore the map <svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a></article>
+  </section>
+  <section id="how-view" class="info-view" aria-labelledby="how-title">
+    <article class="panel info-panel"><h1 id="how-title">From map to site visit</h1><ol><li>Select a district or census area and switch between the heat, vegetation and priority layers.</li><li>Use the priority breakdown and field checklist to decide where to visit.</li><li>Check sidewalk width, wires and nearby obstacles before choosing a native tree.</li></ol><a class="header-action" href="#residents" data-view="residents">Check a sidewalk <svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a></article>
+  </section>
   <footer>Sources: <a href="https://novogeosampa.prefeitura.sp.gov.br/">GeoSampa (CC BY-SA)</a>, <a href="https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/">IBGE</a>, <a href="https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-temperature">Landsat/USGS</a>, <a href="https://nossasaopaulo.org.br/o-que-fazemos/mapa-da-desigualdade/">Rede Nossa São Paulo (district vegetation)</a> and <a href="https://prefeitura.sp.gov.br/meio_ambiente/w/publicacoes_svma/188452">Municipal planting guide</a>.</footer>
 </main>
 <script src="data.js"></script>
@@ -141,4 +215,5 @@
 <script src="organizations.js"></script>
 <script src="planting.js"></script>
 <script src="ask.js"></script>
+<script src="design.js"></script>
 </html>

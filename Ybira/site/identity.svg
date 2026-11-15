@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+<symbol id="tree" viewBox="0 0 64 64">
+  <path fill="#2d9529" d="M13 46C2 46 0 33 6 24c2-4 6-7 11-8C20 5 29 2 36 4c8 1 14 6 16 13 7 4 12 10 11 18-1 8-7 13-14 13H37l2 13H25l2-15Z"/>
+  <path fill="none" stroke="#f9fff3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" d="M32 53V24m0 22-13-10m13 5 13-11"/>
+</symbol>
+<symbol id="mascot" viewBox="0 0 118 94">
+  <path fill="var(--mascot-shell,#07543a)" d="M16 52C16 31 35 20 60 20c25 0 43 12 43 33 0 22-19 34-43 34-9 0-17-2-23-4L19 92c-3 1-5-1-4-4l5-14c-3-5-4-13-4-22Z"/>
+  <path fill="#f4fbe9" d="M25 52c0-15 15-25 35-25 20 0 34 10 34 26 0 17-14 27-34 27-8 0-16-2-23-5l-13 7 5-11c-3-5-4-12-4-19Z"/>
+  <circle cx="47" cy="53" r="4" fill="#07543a"/><circle cx="73" cy="53" r="4" fill="#07543a"/>
+  <path fill="#07543a" d="M54 60q6 4 12 0c1 7-12 10-12 0Z"/>
+  <path fill="#a8db64" stroke="var(--mascot-shell,#07543a)" stroke-width="2.5" d="M79 25C77 12 84 3 101 1c2 13-4 24-22 24Zm9 4c10-9 20-9 29-2-7 11-18 12-29 2Z"/>
+  <path fill="none" stroke="#85ce4e" stroke-width="4" stroke-linecap="round" d="m17 23-6-8M11 31l-8-3m22-12-2-8"/>
+</symbol>
+<symbol id="home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 10v11h5v-5a2 2 0 1 1 4 0v5h5V10"/></symbol>
+<symbol id="building" viewBox="0 0 24 24"><path d="m3 9 9-5 9 5H3Zm1 12h16M6 20v-8m6 8v-8m6 8v-8"/></symbol>
+<symbol id="pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+<symbol id="leaf" viewBox="0 0 24 24"><path d="M20 4C9 3 4 8 5 15c1 6 14 5 15-11ZM3 22 15 10"/></symbol>
+<symbol id="temperature" viewBox="0 0 24 24"><path d="M9 14V6a3 3 0 1 1 6 0v8a5 5 0 1 1-6 0Zm3-6v8"/><circle cx="12" cy="17" r="1"/></symbol>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+<symbol id="map" viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15"/></symbol>
+<symbol id="layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></symbol>
+<symbol id="chart" viewBox="0 0 24 24"><path d="M4 21v-7m5 7V9m5 12V5m5 16V2"/></symbol>
+<symbol id="rules" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8m-8 4h7m-7 4h4"/></symbol>
+<symbol id="send" viewBox="0 0 24 24"><path d="m3 11 18-7-7 17-4-7-7-3Zm7 3L21 4"/></symbol>
+<symbol id="calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4m8-4v4"/></symbol>
+<symbol id="download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></symbol>
+<symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 5 0 0 1 16 0v2Z"/></symbol>
+</svg>

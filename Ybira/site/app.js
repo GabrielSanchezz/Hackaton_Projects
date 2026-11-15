@@ -3,7 +3,8 @@
 const data = window.ybira;
 const $ = id => document.getElementById(id);
 const map = $("map");
-const colors = ["#ffe3a0", "#ffbe72", "#f48a4b", "#db5039", "#9f2036"];
+const colors = ["#46ad57", "#a6cc51", "#f5d449", "#f78f43", "#df4646"];
+const priorityColors = ["#f7e9cd", "#f8ca85", "#f6a460", "#e56c51", "#aa3551"];
 const fmt = value => value.toLocaleString("en-US", { maximumFractionDigits: 1 });
 const mapBounds = { width: 360, height: 350 };
 const svgNS = "http://www.w3.org/2000/svg";
@@ -24,7 +25,7 @@ const purples = ["#f0e9f3", "#d8bfdf", "#bc92c7", "#925e9c", "#673868"];
 const layers = {
   heat: { label: "Average surface heat · Landsat 9 · Nov 29, 2025", bands: [33, 37, 41, 45], labels: ["<33 °C", "33–<37", "37–<41", "41–<45", "45+"], value: a => a.heat ? a.mean : null, palette: colors },
   peak: { label: "Hottest valid surface pixel · Landsat 9 · Nov 29, 2025", bands: [35, 40, 45, 50], labels: ["<35 °C", "35–<40", "40–<45", "45–<50", "50+"], value: a => a.heat ? a.max : null, palette: colors },
-  priority: { label: "Planting priority · Higher score = earlier field visit", bands: [20, 40, 60, 80], labels: ["<20", "20–<40", "40–<60", "60–<80", "80–100"], value: a => a.priority, palette: colors },
+  priority: { label: "Planting priority · Higher score = earlier field visit", bands: [20, 40, 60, 80], labels: ["<20", "20–<40", "40–<60", "60–<80", "80–100"], value: a => a.priority, palette: priorityColors },
   vegetation: { label: "Estimated vegetation cover · GeoSampa, imagery from 2017–18", bands: ratios, labels: ratioLabels, value: a => a.vegetation, palette: greens },
   income: { label: "Median monthly income of household heads with earnings · Census 2022", bands: [1000, 1500, 2000, 3000], labels: ["<R$1k", "1–<1.5k", "1.5–<2k", "2–<3k", "R$3k+"], value: a => a.income, palette: greens },
   equity: { label: "Share identifying as Black (Preta) or Brown (Parda) · Census 2022", bands: ratios, labels: ratioLabels, value: a => a.equity, palette: purples },
@@ -265,8 +266,6 @@ function tab(org) {
   if (org) setLayer("priority");
 }
 
-$("citizen-tab").onclick = () => tab(false);
-$("org-tab").onclick = () => tab(true);
 $("zoom").onclick = () => {
   if (pilotMode) selectArea(lastDistrict ?? pilotId, "district");
   else selectArea(lastSector, "sector");

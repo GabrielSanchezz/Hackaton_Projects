@@ -22,7 +22,7 @@
   }
 
   function openAssessment() {
-    tab(false);
+    window.openYbira("residents", false);
     const destination = !$("plant").hidden ? $("assessment-title")
       : !$("result").hidden ? $("result").querySelector("h3") : $("description");
     destination?.focus({ preventScroll: true });

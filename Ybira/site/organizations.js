@@ -166,7 +166,7 @@
 
   $("map").addEventListener("areachange", event => render(event.detail));
   $("assess-visit").addEventListener("click", () => {
-    tab(false);
+    window.openYbira("residents", false);
     $("description").focus();
   });
   $("copy-visit").addEventListener("click", async () => {
