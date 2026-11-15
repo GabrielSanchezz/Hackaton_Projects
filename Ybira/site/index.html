@@ -40,25 +40,61 @@
       <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/parques/284396">Ask São Paulo 156 about free tree planting</a>
     </section>
     <section class="panel audience-panel" id="org" hidden>
-      <h2>Plan a site visit</h2>
-      <p>Three candidate census areas based on heat and lack of street trees. The list prioritizes the number of surveyed residents living on block faces with no trees.</p>
-      <div id="targets"></div>
-      <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/servicos/viveiros/fornecimento_de_mudas/4465">See the city's tree seedling program for organizations</a>
+      <h2>Plan a planting visit</h2>
+      <p>Find where heat and the lack of street trees overlap in Brasilândia.</p>
+      <h3>Where to start</h3>
+      <div id="targets" class="priority-list"></div>
+      <section id="org-profile" aria-labelledby="profile-title"></section>
+      <div class="form-actions visit-actions">
+        <button type="button" id="copy-visit">Copy visit checklist</button>
+        <button type="button" id="assess-visit" class="text-button">Assess a sidewalk</button>
+        <span id="visit-status" class="small" role="status"></span>
+      </div>
+      <details class="ranking-source"><summary>How priorities are calculated</summary>
+        <p>The pilot score uses 30 points for surface heat, 25 for lack of vegetation, and 15 each for lower income, the share of residents who identify as Black or Brown, and the share living on block faces without trees. Heat and income use percentiles of eligible areas. The other factors use their shares directly. The weights are a proposed planning policy for this pilot and should be reviewed with residents and partner organizations.</p>
+        <p>The race factor is an area-level equity measure. A sector needs data for all five factors, at least five valid satellite pixels and at least 80% valid pixel coverage to receive a score. Income is the median for household heads with earnings.</p>
+      </details>
+      <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/servicos/viveiros/fornecimento_de_mudas/4465">São Paulo’s seedling program for organizations</a>
     </section>
     <section class="panel map-panel" aria-labelledby="map-title">
       <div class="row"><h2 id="map-title">São Paulo</h2><button id="zoom">Explore Brasilândia</button></div>
-      <svg id="map" viewBox="0 0 360 350" aria-label="Interactive surface temperature map"></svg>
-      <p class="small">Surface temperature · Landsat 9 · Nov 29, 2025</p>
-      <div class="legend" aria-label="Temperature ranges in degrees Celsius"><span>&lt;33 °C</span><span>33–37</span><span>37–41</span><span>41–45</span><span>45+</span></div>
+      <label class="map-select" for="map-layer">Color the map by
+        <select id="map-layer">
+          <option value="heat">Average surface heat</option>
+          <option value="priority">Planting priority score</option>
+          <option value="peak">Hottest surface pixel</option>
+          <option value="vegetation">Vegetation cover</option>
+          <option value="income">Median household-head income</option>
+          <option value="equity">Black and Brown population share</option>
+          <option value="exposure">Residents on blocks without trees</option>
+        </select>
+      </label>
+      <div id="map-stage">
+        <svg id="map" viewBox="0 0 360 350" tabindex="0" aria-label="Surface temperature map of São Paulo. Use plus and minus to zoom and arrow keys to pan."></svg>
+        <div class="map-controls" aria-label="Map controls">
+          <button type="button" id="map-in" aria-label="Zoom in">+</button>
+          <button type="button" id="map-out" aria-label="Zoom out">−</button>
+        </div>
+      </div>
+      <label class="map-select" for="map-area">Find an area in Brasilândia<select id="map-area"><option value="">Select a census area</option></select></label>
+      <p class="small">Scroll or pinch to zoom. Drag to move. Select an area to see its data.</p>
+      <p class="small">District names appear as you zoom, followed by named IBGE communities where available.</p>
+      <p class="small map-legend-title" id="legend-title"></p>
+      <div class="legend" id="map-legend"></div>
+      <p class="small">Gray areas lack comparable data for the selected layer.</p>
       <p id="detail" aria-live="polite"></p>
+      <a id="map-profile-link" href="#profile-title" hidden>See the selected area’s charts</a>
     </section>
   </div>
   <footer>Sources: <a href="https://novogeosampa.prefeitura.sp.gov.br/">GeoSampa (CC BY-SA)</a>, <a href="https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/">IBGE</a>, <a href="https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-temperature">Landsat/USGS</a> and <a href="https://prefeitura.sp.gov.br/meio_ambiente/w/publicacoes_svma/188452">Municipal planting guide</a>.</footer>
 </main>
 <script src="data.js"></script>
+<script src="organization-data.js"></script>
+<script src="priority.js"></script>
 <script src="catalog.js"></script>
 <script src="recommend.js"></script>
 <script src="interpretar-local.js"></script>
 <script src="app.js"></script>
+<script src="organizations.js"></script>
 <script src="planting.js"></script>
 </html>
