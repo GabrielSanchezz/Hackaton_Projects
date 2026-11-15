@@ -1,6 +1,19 @@
 "use strict";
 function interpretarLocal(description) {
-  const t = description.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+  const t = description.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "")
+    .replace(/\b(no|without) overhead (?:wires|wiring)\b/g, "sem fiacao")
+    .replace(/\b(?:with overhead (?:wires|wiring)|overhead wires above)\b/g, "com fiacao")
+    .replace(/\b(?:an existing tree|already has a tree)\b/g, "arvore existente")
+    .replace(/\b(?:no existing tree|no trees?)\b/g, "sem arvore")
+    .replace(/\b(?:public square|plaza)\b/g, "praca")
+    .replace(/\bsidewalk\b/g, "calcada")
+    .replace(/\bstreet\b/g, "rua")
+    .replace(/\b(?:backyard|yard)\b/g, "quintal")
+    .replace(/\b(?:vacant lot|plot)\b/g, "terreno")
+    .replace(/\bclear (?:walking space|pedestrian width)\b/g, "faixa livre")
+    .replace(/\bsquare meters?\b/g, "m2")
+    .replace(/\bmeters?\b/g, "metros")
+    .replace(/\b(?:one|two|three|four|five)\b/g, (word) => ({one:"1",two:"2",three:"3",four:"4",five:"5"})[word]);
   const sites = [
     ["calcada", /\b(calcada|passeio publico)\b/],
     ["praca", /\bpraca\b/],
