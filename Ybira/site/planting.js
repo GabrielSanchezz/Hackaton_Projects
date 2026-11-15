@@ -300,11 +300,25 @@
       const ranking = element("ol", "", "tree-ranking");
       for (const tree of trees) {
         const item = element("li");
-        item.append(element("strong", tree.name));
-        item.append(element("p", `${tree.height.join("–")} m tall when grown · Native to São Paulo`));
+        item.append(element("h4", tree.name));
+        item.append(element("p", `${tree.scientific} · ${tree.height.join("–")} m tall when grown · Native to São Paulo`));
+        const photo = window.ybiraTreePhotos[tree.scientific];
+        if (photo) {
+          const figure = element("figure", "", "tree-photo");
+          const image = element("img");
+          image.alt = `Reference photo of ${tree.name} (${tree.scientific})`;
+          image.loading = "lazy";
+          image.src = photo.url;
+          const caption = element("figcaption");
+          caption.append(link(photo.credit, photo.source), document.createTextNode(" · "), link(photo.license, photo.terms));
+          image.addEventListener("error", () => image.replaceWith(link("Open the reference photo", photo.source)));
+          figure.append(image, caption);
+          item.append(figure);
+        }
         const use = tree.established ? "Established choice for sidewalks." : "Listed as a possible sidewalk tree in the city’s guide.";
         const stock = tree.stock === null ? "Ask the nursery about availability." : `${tree.stock} seedlings in the October 2026 inventory.`;
         item.append(element("p", `${use} ${stock}`));
+        item.append(element("p", tree.rankReason, "tree-rank-reason"));
         ranking.append(item);
       }
       result.append(ranking);

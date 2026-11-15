@@ -19,6 +19,45 @@ function plantingBedProblem(total, free, width, area) {
   return "";
 }
 
+const treeRankingCriteria = [
+  {
+    compare: (a, b) => Number(b.stock !== null) - Number(a.stock !== null),
+    reason: "The October 2026 nursery list recorded seedlings for this species. Options with no stock record rank lower.",
+  },
+  {
+    compare: (a, b) => Number(b.established) - Number(a.established),
+    reason: "The city's guide lists this as an established sidewalk tree. Established choices rank above potential ones when both have the same stock-record status.",
+  },
+  {
+    compare: (a, b) => (b.stock ?? 0) - (a.stock ?? 0),
+    reason: "Among options with the same status in the guide, this species ranks ahead of the next one because the October 2026 inventory listed more seedlings.",
+  },
+  {
+    compare: (a, b) => a.scientific.localeCompare(b.scientific, "en"),
+    reason: "The other ranking criteria tie, so scientific names decide the order.",
+  },
+];
+
+function treeRankReason(trees, index) {
+  const tree = trees[index];
+  const previous = trees[index - 1];
+  const next = trees[index + 1];
+  const why = (a, b) => treeRankingCriteria.find(({ compare }) => compare(a, b))?.reason;
+  const explanation = [];
+  if (previous) {
+    const criterion = treeRankingCriteria.findIndex(({ compare }) => compare(previous, tree));
+    const behind = [
+      "The previous option ranks higher because it has a nursery stock record.",
+      "The previous option ranks higher because it is already an established sidewalk tree in the city guide.",
+      "The previous option ranks higher because the nursery inventory recorded more seedlings for it.",
+      "This follows the previous option in alphabetical order by scientific name.",
+    ];
+    if (behind[criterion]) explanation.push(behind[criterion]);
+  }
+  if (next) explanation.push(why(tree, next));
+  return explanation.filter(Boolean).join(" ") || "This is the only species in the catalog that fits the conditions checked here.";
+}
+
 function recommendTrees(site, catalog) {
   const pending = (message) => ({ message, trees: [] });
   const measure = (value) => value == null || value === "" ? NaN : Number(value);
@@ -63,12 +102,8 @@ function recommendTrees(site, catalog) {
   const minimumColumn = code === "P" ? 1 : /^M\d+$/.test(code) ? 2 : /^G\d+$/.test(code) ? 3 : Infinity;
   if (Number(site.clearance) < minimumColumn) return pending("The entered code requires a higher verified clearance column.");
   const trees = catalog.filter((tree) => tree.native && tree.codes.includes(code) && tree.trunk[1] <= trunkLimit)
-    .sort((a, b) => Number(b.stock !== null) - Number(a.stock !== null)
-      || Number(b.established) - Number(a.established)
-      || (b.stock ?? 0) - (a.stock ?? 0)
-      || a.scientific.localeCompare(b.scientific))
-    .slice(0, 4);
+    .sort((a, b) => treeRankingCriteria.map(({ compare }) => compare(a, b)).find(Boolean) ?? 0);
   return trees.length
-    ? { code, trees, message: `Candidate species for code ${code}. Final suitability and current stock require confirmation.` }
+    ? { code, trees: trees.slice(0, 4).map((tree, index) => ({ ...tree, rankReason: treeRankReason(trees, index) })), message: `Candidate species for code ${code}. Final suitability and current stock require confirmation.` }
     : pending(`No locally native species in this catalog matches code ${code} and the confirmed dimensions.`);
 }

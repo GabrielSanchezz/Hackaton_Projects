@@ -36,6 +36,11 @@
 .result { padding: 16px; background: #f4f6ef; border: 1px solid #cddbd0; border-radius: 12px; font-weight: 400; }
 .result > .form-actions { margin-top: 10px; }
 .ranking-source { margin: 14px 0 8px; }
+.tree-ranking h4 { margin: 0; font-size: 17px; }
+.tree-photo { margin: 8px 0; }
+.tree-photo img { display: block; width: min(100%, 330px); height: 150px; object-fit: contain; background: #e8eee5; border-radius: 8px; }
+.tree-photo figcaption { font-size: 12px; margin-top: 3px; }
+.tree-ranking .tree-rank-reason { margin-top: 7px; color: #20352a; font-weight: 600; }
 :focus-visible { outline: 2px solid #166142; outline-offset: 3px; }
 @media (max-width: 720px) {
   .map-panel { grid-column: 1; grid-row: 2; }
