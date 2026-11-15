@@ -95,8 +95,11 @@
       <h2>Find a tree for your sidewalk</h2>
       <form id="interpret" class="description">
         <label for="description">What is the spot like?</label>
-        <textarea id="description" rows="3" maxlength="800" required placeholder="My sidewalk is about two meters wide. There are no wires overhead."></textarea>
-        <p class="small">Write in English or Portuguese. Leave out your address and contact details.</p>
+        <textarea id="description" rows="3" maxlength="800" placeholder="My sidewalk is about two meters wide. There are no wires overhead."></textarea>
+        <label for="plant-photo">Add a photo of the planting spot (optional)</label>
+        <input id="plant-photo" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-help">
+        <img id="plant-photo-preview" alt="Your selected photo of the planting spot" hidden>
+        <p id="photo-help" class="small">Send a photo, a description in English or Portuguese, or both. Avoid including faces, license plates or addresses.</p>
         <div class="form-actions">
           <button type="submit" id="interpret-button">Read my description</button>
           <button type="button" class="text-button" id="manual-start">Answer without AI</button>

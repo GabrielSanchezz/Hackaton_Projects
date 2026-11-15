@@ -148,6 +148,8 @@ body:not(.site-ready) #chat-view,body:not(.site-ready) .info-view{display:none}
 #ask-submit{width:59px;min-height:54px;background:linear-gradient(145deg,#19724a,var(--forest-dark));border:0;border-radius:17px}
 #ask-status{grid-column:1/-1;margin:0}
 .ask-disclaimer{margin:10px 0 0;color:var(--muted)}
+#plant-photo{margin-bottom:8px}
+#plant-photo-preview{display:block;max-width:100%;max-height:210px;margin-bottom:8px;border-radius:12px;object-fit:contain}
 .ask-welcome{background:white;border:1px solid var(--edge);padding:14px;border-radius:16px;margin:17px 0}
 .ask-messages:not(:empty)+.ask-welcome{display:none}
 .info-panel{max-width:780px;margin:0 auto;padding:clamp(22px,4vw,54px)}

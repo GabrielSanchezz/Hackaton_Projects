@@ -3,6 +3,8 @@
 (() => {
   const form = $("plant");
   const description = $("description");
+  const photo = $("plant-photo");
+  const photoPreview = $("plant-photo-preview");
   const status = $("interpret-status");
   const result = $("result");
   const catalog = window.ybiraCatalog;
@@ -51,6 +53,11 @@
       label: "Is there already a tree right where you want to plant?",
       help: "Look at the exact spot where the new trunk would go. A tree nearby will be checked separately when you review distances.",
       options: yesNo,
+    },
+    pole: {
+      label: "Is there a utility pole near the spot?",
+      help: "Check the area in person. If a pole is nearby, measure from its base when the guide asks about clearances.",
+      options: [...yesNo, ["unknown", "Not sure yet"]],
     },
     free: {
       label: "How much room will people have to walk?",
@@ -530,53 +537,97 @@
     description.focus();
   }
 
-  function start(values) {
+  function start(values, fromPhoto = false) {
     answers = {};
-    for (const name of ["place", "total", "free", "wires", "tree"]) {
+    for (const name of ["place", "total", "free", "wires", "tree", "pole"]) {
       if (values[name] != null) answers[name] = String(values[name]);
     }
-    extracted = Object.keys(answers);
-    if (!extracted.length) answers.place = "calcada";
+    extracted = fromPhoto ? [...new Set(["place", "wires", "tree", "pole", ...Object.keys(answers)])] : Object.keys(answers);
+    if (!extracted.length && !fromPhoto) answers.place = "calcada";
     step = null;
     history = [];
     technicalMode = false;
     fullReview = false;
     wiredChecksReviewed = false;
     proceed(extracted.length ? "review" : nextStep());
+    if (fromPhoto) $("assessment-note").textContent = "Review the photo suggestions. Blank fields need an in-person check.";
   }
 
   $("manual-start").addEventListener("click", () => start({}));
+  let previewUrl;
+  photo.addEventListener("change", () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    photoPreview.hidden = !photo.files.length;
+    previewUrl = photo.files.length ? URL.createObjectURL(photo.files[0]) : null;
+    if (previewUrl) photoPreview.src = previewUrl;
+    else photoPreview.removeAttribute("src");
+    $("interpret-button").textContent = previewUrl ? "Review my photo" : "Read my description";
+    status.textContent = "";
+  });
+
+  async function photoData(file) {
+    if (file.size > 20_000_000) throw Error("Choose a photo under 20 MB.");
+    const bitmap = await createImageBitmap(file).catch(() => { throw Error("Choose a JPEG, PNG or WebP photo."); });
+    try {
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(1, 1280 / Math.max(bitmap.width, bitmap.height));
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/jpeg", .8);
+    } finally {
+      bitmap.close();
+    }
+  }
+
   $("interpret").addEventListener("submit", async (event) => {
     event.preventDefault();
     const text = description.value.trim();
-    if (!text) return;
+    const file = photo.files[0];
+    if (!text && !file) {
+      status.textContent = "Add a photo or write a short description.";
+      return;
+    }
     const button = $("interpret-button");
     const manual = $("manual-start");
     button.disabled = manual.disabled = true;
-    status.textContent = "Reading your description…";
+    status.textContent = file ? "Checking the photo…" : "Reading your description…";
     let values;
     try {
       if (location.protocol === "file:") throw Error("Offline");
+      let image;
+      if (file) {
+        try {
+          image = await photoData(file);
+        } catch (error) {
+          status.textContent = error.message;
+          return;
+        }
+      }
       const response = await fetch("/api/interpretar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: text }),
-        signal: AbortSignal.timeout(11_000),
+        body: JSON.stringify({ description: text, photo: image }),
+        signal: AbortSignal.timeout(file ? 17_000 : 11_000),
       });
       if (!response.ok) throw Error("Unavailable");
       ({ fields: values } = await response.json());
       if (!values || typeof values !== "object") throw Error("Invalid response");
     } catch {
+      if (file) {
+        status.textContent = "Photo analysis is unavailable. Try again or continue with the manual form.";
+        return;
+      }
       values = interpretarLocal(text);
     } finally {
       button.disabled = manual.disabled = false;
     }
-    if (description.value.trim() !== text) {
-      status.textContent = "Your description changed. Read the new version to continue.";
+    if (description.value.trim() !== text || photo.files[0] !== file) {
+      status.textContent = "Your submission changed. Submit the new version to continue.";
       return;
     }
     status.textContent = "";
-    start(values);
+    start(values, Boolean(file));
   });
 
   form.addEventListener("submit", (event) => {
