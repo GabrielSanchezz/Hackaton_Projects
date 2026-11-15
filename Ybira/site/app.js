@@ -68,14 +68,79 @@ for (const s of data.sectors.filter((s) => s.both).sort((a,b) => b.without-a.wit
   button.onclick = () => { if (!zoomed) draw(true); showSector(s.id); };
   $("targets").append(button);
 }
-$("plant").addEventListener("submit", (event) => {
+const plant = $("plant");
+const intakeFields = ["place", "total", "free", "area", "wires", "tree"];
+const field = (name) => plant.elements.namedItem(name);
+function showMeasurements() {
+  const place = field("place").value;
+  $("sidewalk-fields").hidden = Boolean(place && place !== "calcada");
+  $("space-field").hidden = !place || place === "calcada";
+}
+field("place").addEventListener("change", showMeasurements);
+
+$("interpret").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const description = $("description").value.trim();
+  const status = $("interpret-status");
+  const button = $("interpret-button");
+  if (!description) {
+    status.textContent = "Escreva uma breve descrição do local.";
+    return;
+  }
+  const before = new Map(intakeFields.map((name) => [name, field(name).value]));
+  button.disabled = true;
+  status.textContent = "Interpretando a descrição...";
+  let values;
+  let automatic = false;
+  try {
+    if (location.protocol === "file:") throw Error("Sem servidor");
+    const response = await fetch("/api/interpretar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description }),
+      signal: AbortSignal.timeout(11_000),
+    });
+    if (!response.ok) throw Error("IA indisponível");
+    ({ fields: values } = await response.json());
+    if (!values || typeof values !== "object") throw Error("Resposta inválida");
+    automatic = true;
+  } catch {
+    values = interpretarLocal(description);
+  } finally {
+    button.disabled = false;
+  }
+  if ($("description").value.trim() !== description) {
+    status.textContent = "A descrição mudou. Clique novamente para interpretar o texto atualizado.";
+    return;
+  }
+  let count = 0;
+  for (const name of intakeFields) {
+    const input = field(name);
+    if (input.value || input.value !== before.get(name) || values[name] == null) continue;
+    input.value = String(values[name]);
+    if (input.value) count++;
+  }
+  showMeasurements();
+  const mode = automatic ? "Interpretação com Gemini." : "Preenchimento básico por regras. A IA está indisponível.";
+  status.textContent = count
+    ? `${mode} Confira os campos preenchidos e complete o que faltar.`
+    : `${mode} Nenhum campo em branco foi preenchido. Confira o formulário.`;
+});
+
+plant.addEventListener("submit", (event) => {
   event.preventDefault();
   const fields = new FormData(event.target);
-  const total = Number(fields.get("total"));
-  const free = Number(fields.get("free"));
+  const place = fields.get("place");
+  const totalInput = fields.get("total");
+  const freeInput = fields.get("free");
+  const total = Number(totalInput);
+  const free = Number(freeInput);
   const code = fields.get("code");
   const result = $("result");
-  if (free > total) result.textContent = "A faixa livre precisa caber na largura total. Confira as medidas.";
+  if (!place) result.textContent = "Confirme o tipo de local antes de continuar.";
+  else if (place !== "calcada") result.textContent = "A orientação de espécies desta versão cobre calçadas. Para esse local, use os dados do formulário para solicitar uma avaliação.";
+  else if (!totalInput || !freeInput) result.textContent = "Informe a largura total e confira quanto do caminho ficará livre para pedestres.";
+  else if (free > total) result.textContent = "A faixa livre precisa caber na largura total. Confira as medidas.";
   else if (total < 1.9 || free < 1.2) result.textContent = "As medidas ficam abaixo da triagem do manual usado neste protótipo. Procure orientação pelo 156.";
   else if (!fields.get("wires") || !code) result.textContent = "Confirme a fiação e peça uma avaliação do ponto pela Chave Arborizar para definir as espécies candidatas.";
   else {
