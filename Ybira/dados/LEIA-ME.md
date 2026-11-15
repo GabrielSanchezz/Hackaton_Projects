@@ -45,6 +45,10 @@ O score usa os mesmos pesos nas duas escalas. Os percentis distritais comparam o
 - A sobreposição de UBSs do piloto usa os 21 pontos de unidades básicas do arquivo `apoio_ubs_brasilandia.geojson` (GeoSampa), dos quais 16 estão no distrito e cinco nos arredores. O seletor ordena as unidades pela distância aproximada em linha reta desde o centro do setor no mapa. O painel fornece endereço e link para abrir a localização. A posição serve para planejar uma vistoria das rotas de acesso a pé.
 - Calçadas, vegetação e camadas de apoio foram extraídas pelo retângulo de abrangência do distrito, de −46,715504 a −46,663511 de longitude e de −23,481366 a −23,415180 de latitude. Elas podem incluir feições de distritos vizinhos. Os limites do piloto e os setores por código correspondem ao distrito.
 
+## Ask Ybirá
+
+O chat consulta os trechos revisados em `../site/lib/ask-sources.js` e os mesmos arquivos de indicadores, fórmulas do score e pontos de UBS usados pelo mapa. A busca por palavras-chave seleciona trechos antes de chamar a Groq. O servidor devolve os links dos trechos ou dos dados citados. Os documentos são um recorte curado e precisam ser revisados quando a prefeitura atualizar as orientações. Perguntas e contexto do mapa são usados para responder à conversa em curso.
+
 ## Fontes
 
 - [GeoSampa](https://novogeosampa.prefeitura.sp.gov.br/) e [serviço oficial WFS](https://wfs.geosampa.prefeitura.sp.gov.br/geoserver/geoportal/wfs?service=WFS&request=GetCapabilities). Camadas `distrito_municipal`, `calcada`, `cobertura_vegetal`, `setor_censitario_2022`, `arvore`, `equipamento_educacao_rede_publica`, `equipamento_saude_ubs_posto_centro` e `ponto_onibus`. Geometrias em WGS 84.

@@ -27,7 +27,7 @@
     wires: {
       label: "Are there wires above the spot?",
       help: "Look up from ground level. Check for wires crossing or running along the planting spot. If you see a wire or are unsure what it carries, choose Yes or check later.",
-      options: yesNo,
+      options: [...yesNo, ["unknown", "Not sure yet"]],
     },
     city: {
       label: "Which municipality is this sidewalk in?",
@@ -125,6 +125,8 @@
   let step;
   let history = [];
   let technicalMode = false;
+  let fullReview = false;
+  let wiredChecksReviewed = false;
 
   function element(tag, text, className) {
     const node = document.createElement(tag);
@@ -154,7 +156,7 @@
     );
   }
 
-  function question(name) {
+  function question(name, required = step !== "review") {
     const spec = questions[name];
     const block = element("div", "", "assessment-field");
     const heading = element("div", "", "question-heading");
@@ -213,7 +215,7 @@
       for (const [value, label] of spec.options) control.add(new Option(label, value));
     }
     control.value = answers[name] ?? spec.defaultValue ?? "";
-    control.required = step !== "review";
+    control.required = required;
     const row = element("div", "", "answer-control");
     row.append(control);
     if (spec.measure) {
@@ -285,12 +287,12 @@
   }
 
   function nextStep() {
-    if (!answers.place) return "place";
-    if (answers.place !== "calcada") return null;
-    if (!answers.total) return "total";
-    if (Number(answers.total) < 1.9) return null;
+    if (answers.place && answers.place !== "calcada") return null;
+    if (answers.total && Number(answers.total) < 1.9) return null;
     if (answers.tree === "Presente") return null;
-    if (!answers.wires) return "wires";
+    if (!answers.place || !answers.total || !answers.wires) return "quick";
+    if (!fullReview && previewTrees({ ...answers, bedArea: plantingBedArea(answers.bedWidth, answers.bedLength) }, catalog).length) return "preview";
+    if (answers.wires === "unknown") return "wires";
     const wired = answers.wires === "Presente";
     if (wired) {
       if (!answers.city || !answers.biome) return "wiredLocation";
@@ -304,7 +306,7 @@
     if (!answers.bedWidth || !answers.bedLength) return "bed";
     const area = plantingBedArea(answers.bedWidth, answers.bedLength);
     if (plantingBedProblem(Number(answers.total), Number(answers.free), Number(answers.bedWidth), area)) return null;
-    if (wired) return !answers.nearbyTreeSize || wiredClearances.some(({ key }) => !answers[key]) ? "wiredClearances" : null;
+    if (wired) return wiredChecksReviewed ? null : "wiredClearances";
     if (!answers.clearance) return "clearance";
     if (answers.clearance === "0") return null;
     if (needsSiteVisit) return answers.code ? null : "code";
@@ -315,6 +317,42 @@
     return null;
   }
 
+  function showWiredChecks(content) {
+    const checklist = element("ul", "", "distance-list");
+    for (const { key, label, minimum } of wiredClearances) {
+      const distance = key === "treeDistance" ? "5 m to a small tree, 6.5 m to a medium tree, 8.5 m to a large or unknown tree" : minimum + " m";
+      checklist.append(element("li", `${label} · ${distance}`));
+    }
+
+    const attestation = element("label", "", "assessment-confirm");
+    const checked = element("input");
+    checked.type = "checkbox";
+    checked.name = "clearancesAttested";
+    checked.checked = answers.clearancesAttested === "on";
+    attestation.append(checked, element("span", "I checked these distances from the planting point and all meet the listed minimums."));
+
+    const measurements = element("details", "", "ranking-source");
+    measurements.append(element("summary", "Enter any distances you want to check"));
+    measurements.open = wiredClearances.some(({ key }) => Boolean(answers[key]));
+    const nearby = question("nearbyTreeSize", false);
+    const tree = question("treeDistance", false);
+    const updateTreeMinimum = () => {
+      const size = nearby.querySelector("select").value;
+      tree.querySelector(".measurement-minimum").textContent = `Minimum: ${treeSeparation(size).toFixed(2)} m.`;
+    };
+    nearby.addEventListener("change", updateTreeMinimum);
+    updateTreeMinimum();
+    for (const { key, label } of wiredClearances) {
+      const obstacle = element("details", "", "ranking-source");
+      obstacle.append(element("summary", label));
+      if (key === "treeDistance") obstacle.append(nearby, tree);
+      else obstacle.append(question(key, false));
+      obstacle.open = Boolean(answers[key]);
+      measurements.append(obstacle);
+    }
+    content.append(checklist, attestation, measurements);
+  }
+
   function showStep(target) {
     step = target;
     form.hidden = false;
@@ -323,30 +361,23 @@
     const content = $("assessment-fields");
     content.replaceChildren();
     $("assessment-title").textContent = target === "review" ? "Check what Ybirá understood"
-      : target === "bed" ? "Measure the planting bed" : target === "wiredClearances" ? "Check distances under overhead wires"
+      : target === "quick" ? "Find trees for this sidewalk"
+        : target === "bed" ? "Measure the planting bed" : target === "wiredClearances" ? "Are there any obstacles too close?"
         : target === "wiredLocation" ? "Confirm the planting location" : "Tell us a little more";
     $("assessment-note").textContent = target === "review" ? "Correct anything that looks off before you continue."
-      : target === "wiredClearances" ? "Measure from where the trunk would go. If you checked that an object is outside the required distance, you can enter that minimum. This screen covers native trees up to 5 m tall." : "";
+      : target === "wiredClearances" ? "Use these minimums only for small trees under wires. Measure from where the trunk would go." : "";
     if (target === "bed") showBedMeasurements(content);
-    else if (target === "wiredLocation") content.append(question("city"), question("biome"));
-    else if (target === "wiredClearances") {
-      content.append(element("p", "For this wired-sidewalk screen, Ybirá adds a 3 m utility-pole minimum and a 5 m streetlight minimum.", "small"));
-      const nearby = question("nearbyTreeSize");
-      const distance = question("treeDistance");
-      const update = () => {
-        const size = nearby.querySelector("select").value;
-        const hint = distance.querySelector(".measurement-minimum");
-        if (size) hint.textContent = `Minimum: ${treeSeparation(size).toFixed(2)} m.`;
-      };
-      nearby.addEventListener("change", update);
-      content.append(nearby, distance);
-      for (const { key } of wiredClearances) if (key !== "treeDistance") content.append(question(key));
-      update();
+    else if (target === "quick") {
+      if (!answers.place) content.append(question("place"));
+      content.append(question("total"), question("wires"));
     }
+    else if (target === "wiredLocation") content.append(question("city"), question("biome"));
+    else if (target === "wiredClearances") showWiredChecks(content);
     else for (const name of target === "review" ? extracted : [target]) content.append(question(name));
-    $("assessment-skip").hidden = !["total", "free", "wires", "tree", "bed", "clearance", "setback", "traffic", "wiredClearances"].includes(target);
+    $("assessment-skip").hidden = !["free", "wires", "tree", "bed", "clearance", "setback", "traffic", "wiredClearances"].includes(target);
     $("assessment-back").textContent = history.length ? "Back" : "Back to description";
-    $("assessment-next").textContent = target === "code" ? "Find my trees" : "Continue";
+    $("assessment-next").textContent = target === "quick" ? "See possible trees" : target === "wiredClearances" ? "Review these checks" : target === "code" ? "Find my trees" : "Continue";
+    $("assessment-skip").textContent = "I’ll check later";
     $("assessment-title").focus();
   }
 
@@ -422,7 +453,30 @@
     return recommendTrees({ ...site, bedArea }, catalog);
   }
 
+  function showPreview() {
+    const trees = previewTrees({ ...answers, bedArea: plantingBedArea(answers.bedWidth, answers.bedLength) }, catalog);
+    if (!trees.length) return false;
+    const unknown = answers.wires === "unknown";
+    const summary = unknown
+      ? "These options use the smaller height limit because overhead wires are still uncertain. Confirm the wires and check the sidewalk before choosing a tree."
+      : "These trees are a starting point. Check the walking space, planting bed and nearby obstacles before choosing one.";
+    finish("Possible trees for your sidewalk", summary, trees, true);
+    const more = element("button", "Check planting conditions");
+    more.type = "button";
+    more.addEventListener("click", () => {
+      fullReview = true;
+      wiredChecksReviewed = false;
+      proceed();
+    });
+    result.querySelector(".form-actions").prepend(more);
+    return true;
+  }
+
   function proceed(target = nextStep()) {
+    if (target === "preview") {
+      showPreview();
+      return;
+    }
     if (target === "siteVisit") {
       finish("This spot needs a site visit", "Wires or a wider sidewalk can change which trees fit. Ask the city to check the spot before choosing a tree.");
       const technical = element("details", "", "ranking-source");
@@ -451,6 +505,7 @@
     }
     const assessment = evaluate();
     if (answers.place === "calcada" && answers.wires === "Presente") {
+      if (assessment.status === "pending" && wiredChecksReviewed && showPreview()) return;
       const titles = {
         candidate: "Small-tree planting may be possible (up to 5 m)",
         blocked: "Do not plant at this spot",
@@ -481,9 +536,12 @@
       if (values[name] != null) answers[name] = String(values[name]);
     }
     extracted = Object.keys(answers);
+    if (!extracted.length) answers.place = "calcada";
     step = null;
     history = [];
     technicalMode = false;
+    fullReview = false;
+    wiredChecksReviewed = false;
     proceed(extracted.length ? "review" : nextStep());
   }
 
@@ -525,10 +583,11 @@
     event.preventDefault();
     const updates = Object.fromEntries(new FormData(form));
     for (const [name, value] of Object.entries(updates)) {
-      if (!questions[name].measure || !value.trim()) continue;
+      if (!questions[name]?.measure || !value.trim()) continue;
       const measurement = meters(value);
       if (measurement === null) {
         const control = form.elements.namedItem(name);
+        for (let details = control.closest("details"); details; details = details.parentElement.closest("details")) details.open = true;
         control.setCustomValidity("Enter meters, for example 1.30 or 1,30.");
         control.reportValidity();
         return;
@@ -539,6 +598,17 @@
       updates.total = updates.free = "";
     }
     if (step !== "code" && Object.entries(updates).some(([name, value]) => answers[name] !== value)) delete answers.code;
+    if (["quick", "review"].includes(step) && ["place", "total", "wires"].some(name => Object.hasOwn(updates, name) && updates[name] !== answers[name])) fullReview = false;
+    if (step === "wiredClearances") {
+      wiredChecksReviewed = true;
+      delete answers.clearancesAttested;
+    } else if (["place", "total", "wires", "city", "biome", "tree", "free", "bedWidth", "bedLength"]
+      .some(name => Object.hasOwn(updates, name) && updates[name] !== answers[name])) {
+      wiredChecksReviewed = false;
+      for (const { key } of wiredClearances) delete answers[key];
+      delete answers.nearbyTreeSize;
+      delete answers.clearancesAttested;
+    }
     Object.assign(answers, updates);
     proceed();
   });
@@ -549,13 +619,7 @@
   });
 
   $("assessment-skip").addEventListener("click", () => {
-    if (step === "clearance" && answers.wires === "Ausente" && Number(answers.total) < 2.4) {
-      const assessment = evaluate({ ...answers, clearance: "1" });
-      if (assessment.trees.length) {
-        finish("Small trees to explore", "These are preliminary options. Check the distances to nearby objects before choosing a tree.", assessment.trees, true);
-        return;
-      }
-    }
+    if (showPreview()) return;
     finish("Come back when you have checked the spot", "This answer can change which trees fit here. You can review your answers or ask the city for help checking the site.");
   });
 })();

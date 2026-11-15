@@ -93,8 +93,11 @@ function lookupAreas(question, fromMap, map) {
     .sort((a, b) => normalize(b.name).length - normalize(a.name).length);
   const districts = named.filter(area => !named.some(other => other !== area && other.name.length > area.name.length
     && wordMatch(normalize(other.name), normalize(area.name)) && !wordMatch(q.replace(normalize(other.name), ""), normalize(area.name))));
-  const areas = [...new Map([...exact, ...resolved, ...districts].map(area => [area.id, area])).values()].slice(0, 3);
-  return { areas, ambiguous };
+  const index = area => q.indexOf(ids.has(area.id) ? area.id : normalize(area.name ?? ""));
+  const areas = [...new Map([...exact, ...resolved, ...districts].map(area => [area.id, area])).values()]
+    .sort((a, b) => index(a) - index(b)).slice(0, 3);
+  const unmatchedIds = [...ids].filter(id => !map.sectorIndicators.has(id) && !map.districtIndicators.has(id));
+  return { areas, ambiguous, unmatchedIds };
 }
 
 function profile(area, map) {
@@ -139,21 +142,32 @@ export function areaContext(question, areaId, previousQuestion) {
   const map = mapData;
   const explicit = lookupAreas(question, areaId, map);
   const selected = map.sectorIndicators.get(areaId) ?? map.districtIndicators.get(areaId);
-  const earlier = previousQuestion ? lookupAreas(previousQuestion, areaId, map) : { areas: [] };
   const q = normalize(question);
   const localMarkers = /\b(ubs|bairro|distrito|setor|district|census|mapa|map|vegetacao|vegetation|temperatura|temperature|percentual|percentage|renda|income|idosos|idosas|older|idade|race|raca|score|calor|heat|mirangoaba|ranking|prioridade|priority)\b/;
-  const isLocal = Boolean(explicit.areas.length || explicit.ambiguous.length || localMarkers.test(q) || /\b(65 anos|65 plus|sem arvores)\b/.test(q));
-  if (!isLocal && !earlier.areas.length) return [];
-  const contextAreas = explicit.areas.length ? [...explicit.areas] : [...earlier.areas];
+  const refersHere = /\b(aqui|here|la|ali|neste|nesta|nesse|nessa|this area|this district|this sector|selecionad[oa]|selected|desse setor|dessa area|da area|do setor|do distrito|desse distrito|no mapa)\b/.test(q);
+  const isLocal = Boolean(explicit.areas.length || explicit.ambiguous.length || explicit.unmatchedIds.length || localMarkers.test(q) || /\b(65 anos|65 plus|sem arvores)\b/.test(q));
+  const followsUp = /^(e|and|e para|what about|how about)\b/.test(q) && q.split(" ").length <= 12;
+  if (!isLocal && !followsUp) return [];
+  const earlier = previousQuestion && (followsUp || isLocal) ? lookupAreas(previousQuestion, areaId, map) : { areas: [] };
+  const unrecognizedPlace = !explicit.areas.length && !refersHere && (
+    /\b(?:score|pontuacao|heat|calor|income|renda|temperatura(?: de superficie)?|temperature|vegetacao|vegetation|arvores|trees|populacao|population) (?:em|no|na|da|do|de|in|of|for) (?!superficie\b|surface\b|plantio\b|prioridade\b|ar\b|air\b|calor\b|risco\b)\w/.test(q)
+    || /\b(?:rio de janeiro|osasco|guarulhos|campinas|belo horizonte|curitiba|porto alegre|sao bernardo|santo andre)\b/.test(q)
+  );
+  const unresolved = explicit.unmatchedIds.length > 0 || unrecognizedPlace;
+  const contextAreas = [...explicit.areas];
+  if (!contextAreas.length && !unresolved && followsUp) contextAreas.push(...earlier.areas);
   if (explicit.areas.length === 1 && /\b(compare|comparar|comparacao|versus|vs|com o selecionado|selected|aqui)\b/.test(q)) {
     const second = earlier.areas.find(area => area.id !== explicit.areas[0].id) ?? selected;
     if (second && second.id !== explicit.areas[0].id) contextAreas.push(second);
   }
-  if (!contextAreas.length && !explicit.ambiguous.length && selected) contextAreas.push(selected);
+  if (!contextAreas.length && !unresolved && !explicit.ambiguous.length && selected && (refersHere || isLocal)) contextAreas.push(selected);
+  if (!contextAreas.length && !isLocal) return [];
   const contextual = {
     selectedArea: selected ? { id: selected.id, name: selected.name, scale: selected.scale } : null,
     areas: contextAreas.slice(0, 3).map(area => profile(area, map)),
     ambiguousCommunityNames: explicit.ambiguous,
+    unmatchedAreaIds: explicit.unmatchedIds,
+    requestedPlaceUnavailable: unrecognizedPlace,
     notes: "Areas are official São Paulo districts or the Brasilândia pilot census sectors. City districts and pilot sectors are scored within their own scale; compare numerical scores only within the same scale. If the user names an unsupported place, say its data is unavailable. Older residents and clinics are contextual layers, outside the score. All score contributions are computed by the app.",
   };
   const [first, second] = contextual.areas;

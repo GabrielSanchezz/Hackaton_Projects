@@ -77,6 +77,40 @@ function measured(value) {
   return value == null || value === "" ? NaN : Number(value);
 }
 
+function rankedTrees(catalog, code, trunkLimit, wired = false) {
+  const candidates = catalog.filter(tree => tree.native && !tree.invasive && tree.codes.includes(code)
+    && tree.trunk[1] <= trunkLimit && (wired ? tree.wiredTraits && tree.height[1] <= 5 : !tree.wiredOnly))
+    .sort((a, b) => treeRankingCriteria.map(({ compare }) => compare(a, b)).find(Boolean) ?? 0);
+  return candidates.slice(0, wired ? 3 : 4).map((tree, index) => ({
+    ...tree, rankReason: wired && !index ? tree.wiredTraits.fit : treeRankReason(candidates, index),
+  }));
+}
+
+function previewTrees(site, catalog) {
+  const total = measured(site.total);
+  const free = measured(site.free);
+  const bedWidth = measured(site.bedWidth);
+  const bedArea = measured(site.bedArea);
+  const limits = plantingBedLimits(total);
+  if (site.place !== "calcada" || !limits || !["Ausente", "Presente", "unknown"].includes(site.wires)) return [];
+  if (site.tree === "Presente" || site.city === "other" || site.biome === "other") return [];
+  if (Number.isFinite(free) && (free < 1.2 || free > total)) return [];
+  if (Number.isFinite(bedWidth) && Number.isFinite(bedArea) && plantingBedProblem(total, free, bedWidth, bedArea)) return [];
+  const wired = site.wires !== "Ausente";
+  if (wired && total > 3) return [];
+  if (site.wires === "Presente" && wiredClearanceIssues(site).length) return [];
+  if (!wired && site.clearance === "0") return [];
+  return rankedTrees(catalog, "P", limits.trunkLimit, wired);
+}
+
+function wiredClearanceIssues(site) {
+  return wiredClearances.flatMap(({ key, label, minimum }) => {
+    const limit = key === "treeDistance" ? treeSeparation(site.nearbyTreeSize) : minimum;
+    const distance = measured(site[key]);
+    return distance < limit ? [`${label}: ${distance.toFixed(2)} m measured, ${limit.toFixed(2)} m required. Move the planting point at least ${(limit - distance).toFixed(2)} m farther from this object.`] : [];
+  });
+}
+
 function recommendWiredTrees(site, catalog) {
   const answer = (status, message, issues = [], trees = []) => ({ status, message, issues, trees });
   const total = measured(site.total);
@@ -100,24 +134,16 @@ function recommendWiredTrees(site, catalog) {
     if (width > total - free + 1e-6) issues.push(`The planting bed encroaches ${(width - total + free).toFixed(2)} m into the clear walking space.`);
     return answer("blocked", bedProblem, issues);
   }
-  if (!site.nearbyTreeSize || wiredClearances.some(({ key }) => !Number.isFinite(measured(site[key])))) {
-    return answer("pending", "Confirm the distances to nearby objects before choosing a tree.");
-  }
-  const issues = wiredClearances.flatMap(({ key, label, minimum }) => {
-    const limit = key === "treeDistance" ? treeSeparation(site.nearbyTreeSize) : minimum;
-    const distance = measured(site[key]);
-    return distance < limit ? [`${label}: ${distance.toFixed(2)} m measured, ${limit.toFixed(2)} m required. Move the planting point at least ${(limit - distance).toFixed(2)} m farther from this object.`] : [];
-  });
+  const issues = wiredClearanceIssues(site);
   if (issues.length) return answer("blocked", "The planting point is too close to one or more objects.", issues);
+  const attested = site.clearancesAttested === "on";
+  if (!attested && (!site.nearbyTreeSize || wiredClearances.some(({ key }) => !Number.isFinite(measured(site[key]))))) {
+    return answer("pending", "Check the remaining clearances or keep the tree shortlist for your site visit.");
+  }
   const { trunkLimit } = plantingBedLimits(total);
-  const candidates = catalog.filter(tree => tree.native && !tree.invasive && tree.wiredTraits && tree.codes.includes("P")
-    && tree.height[1] <= 5 && tree.trunk[1] <= trunkLimit)
-    .sort((a, b) => treeRankingCriteria.map(({ compare }) => compare(a, b)).find(Boolean) ?? 0);
-  const trees = candidates.slice(0, 3).map((tree, index) => ({
-    ...tree, rankReason: index ? treeRankReason(candidates, index) : tree.wiredTraits.fit,
-  }));
+  const trees = rankedTrees(catalog, "P", trunkLimit, true);
   return trees.length
-    ? answer("candidate", "The spot passes the measured checks. Before planting, have the city and electricity provider check the line, underground utilities and other obstacles, including larger trees nearby.", [], trees)
+    ? answer("candidate", "The spot passes the checks you provided. Before planting, have the city and electricity provider check the line, underground utilities and other obstacles, including larger trees nearby.", [], trees)
     : answer("pending", "The measurements pass, but the catalog has no verified native sidewalk tree with an adult height of 5 m or less for this spot.");
 }
 
@@ -164,9 +190,8 @@ function recommendTrees(site, catalog) {
   }
   const minimumColumn = code === "P" ? 1 : /^M\d+$/.test(code) ? 2 : /^G\d+$/.test(code) ? 3 : Infinity;
   if (Number(site.clearance) < minimumColumn) return pending("The entered code requires a higher verified clearance column.");
-  const trees = catalog.filter((tree) => tree.native && !tree.invasive && !tree.wiredOnly && tree.codes.includes(code) && tree.trunk[1] <= trunkLimit)
-    .sort((a, b) => treeRankingCriteria.map(({ compare }) => compare(a, b)).find(Boolean) ?? 0);
+  const trees = rankedTrees(catalog, code, trunkLimit);
   return trees.length
-    ? { code, trees: trees.slice(0, 4).map((tree, index) => ({ ...tree, rankReason: treeRankReason(trees, index) })), message: `Candidate species for code ${code}. Final suitability and current stock require confirmation.` }
+    ? { code, trees, message: `Candidate species for code ${code}. Final suitability and current stock require confirmation.` }
     : pending(`No locally native species in this catalog matches code ${code} and the confirmed dimensions.`);
 }

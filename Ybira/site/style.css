@@ -17,6 +17,8 @@
 .help-copy { margin-top: 8px; padding: 12px 14px; border-left: 3px solid #4a7860; border-radius: 4px; background: #fff; color: #364f43; font-size: 14px; }
 .help-copy p:last-child { margin-bottom: 0; }
 .distance-list { padding-left: 18px; margin: 0 0 10px; }
+.assessment-confirm { display: flex; align-items: start; gap: 8px; margin: 14px 0; }
+.assessment-confirm input { width: auto; margin-top: 5px; }
 .measurement-minimum { margin: 2px 0 8px; font-weight: 700; }
 .bed-diagram { margin: 12px 0; border: 1px solid #acc0b1; border-radius: 10px; overflow: hidden; font-size: 13px; }
 .diagram-street, .diagram-curb, .diagram-walk { padding: 3px 10px; text-align: center; }

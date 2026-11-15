@@ -104,9 +104,9 @@ function fallback(question, language, clips, local) {
   const locale = pt ? "pt-BR" : "en-US";
   const format = number => number.toLocaleString(locale, { maximumFractionDigits: 2 });
   const introductory = pt ? "A IA está indisponível no momento. " : "The AI is temporarily unavailable. ";
-  const [first, second] = map?.details.areas ?? [];
   if (map?.details.comparison && isScoreQuestion(question)) {
-    const scores = [first, second].map(area => area.name + ": " + format(area.priorityScore) + "/100").join("\n");
+    const scores = map.details.areas.filter(area => area.priorityScore !== null)
+      .map(area => area.name + ": " + format(area.priorityScore) + "/100").join("\n");
     return message(introductory + (pt ? "Pontuações no mapa:\n" : "Scores in the map:\n") + scores, [map]);
   }
   if (profile) {
@@ -120,6 +120,9 @@ function fallback(question, language, clips, local) {
     }
   }
   const clip = clips[0];
+  if (map?.details.requestedPlaceUnavailable || map?.details.unmatchedAreaIds.length) {
+    return message(pt ? "Não encontrei essa área na cobertura do mapa do Ybirá. A base inclui os distritos da cidade de São Paulo e setores da Brasilândia." : "I could not find that area in the Ybirá map. It covers São Paulo’s districts and census areas in Brasilândia.", [map]);
+  }
   if (clip && (pt || clip.textEn)) return message(introductory + (pt ? excerpt(clip) : clip.textEn), [clip]);
   const assumption = map ? (pt ? "Selecione um distrito ou setor no mapa para ver os dados daquele lugar." : "Choose a district or census area on the map to view local data.") : "";
   return message(introductory + (assumption || (pt ? "Tente uma pergunta sobre plantio em São Paulo ou sobre uma área do mapa." : "Try a question about planting in São Paulo or an area on the map.")), clips.slice(0, 2));
@@ -127,7 +130,7 @@ function fallback(question, language, clips, local) {
 
 function cleanSource(source, language) {
   const text = language === "en" ? source.textEn ?? excerpt(source) : excerpt(source);
-  return { id: source.id, title: source.title, evidence: text.slice(0, 4700) };
+  return { id: source.id, title: source.title, evidence: text };
 }
 
 function containsScore(answer, score) {
@@ -188,7 +191,7 @@ export default {
       const answer = reply.answer.trim();
       const map = local.find(source => source.id === "map");
       if (map?.details.comparison && isScoreQuestion(question)
-        && (!used.includes(map) || !map.details.areas.slice(0, 2).every(area => containsScore(answer, area.priorityScore)))) {
+        && (!used.includes(map) || !map.details.areas.filter(area => area.priorityScore !== null).every(area => containsScore(answer, area.priorityScore)))) {
         return response(fallback(question, language, clips, local));
       }
       return response({ answer, sources: visibleSources(used), action: reply.action === "assess-sidewalk" ? reply.action : "none", mode: "ai" });
