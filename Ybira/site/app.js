@@ -29,19 +29,23 @@ const layers = {
   income: { label: "Median monthly income of household heads with earnings · Census 2022", bands: [1000, 1500, 2000, 3000], labels: ["<R$1k", "1–<1.5k", "1.5–<2k", "2–<3k", "R$3k+"], value: a => a.income, palette: greens },
   equity: { label: "Share identifying as Black (Preta) or Brown (Parda) · Census 2022", bands: ratios, labels: ratioLabels, value: a => a.equity, palette: purples },
   exposure: { label: "Share of assessed residents on blocks without trees · Census 2022", bands: ratios, labels: ratioLabels, value: a => a.exposed, palette: colors },
+  olderShare: { label: "Percentage of residents aged 65 or older · Census 2022", bands: [.05, .1, .15, .2], labels: ["<5%", "5–<10%", "10–<15%", "15–<20%", "20%+"], value: a => a.olderShare, palette: purples },
+  olderCount: { label: "Number of residents aged 65 or older · Census 2022", bands: [5000, 10000, 20000, 30000], labels: ["<5,000", "5–<10k", "10–<20k", "20–<30k", "30k+"], value: a => a.olderCount, palette: purples },
 };
+const olderSectorBands = { bands: [25, 50, 100, 200], labels: ["<25", "25–<50", "50–<100", "100–<200", "200+"] };
 
 function formatLayer(key, value) {
   if (!Number.isFinite(value)) return "Data unavailable";
   if (key === "heat" || key === "peak") return fmt(value) + " °C";
   if (key === "priority") return fmt(value) + "/100";
   if (key === "income") return "R$ " + fmt(value);
+  if (key === "olderCount") return fmt(value) + " people";
   return fmt(value * 100) + "%";
 }
 
 function setLayer(key) {
   $("map-layer").value = key;
-  const layer = layers[key];
+  const layer = key === "olderCount" && pilotMode ? { ...layers[key], ...olderSectorBands } : layers[key];
   const cityVegetation = "Vegetation cover · Rede Nossa São Paulo, 2020 indicator";
   $("legend-title").textContent = key === "priority" ? layer.label + (pilotMode ? " · Brasilândia census areas" : " · São Paulo districts")
     : key === "vegetation" && !pilotMode ? cityVegetation : layer.label;
@@ -209,7 +213,10 @@ function describeSelection(area) {
   const key = $("map-layer").value;
   const label = area.scale === "district" ? area.name + " district"
     : (area.name ? area.name + " · " : "") + "Census area " + area.id;
-  $("detail").textContent = label + " · " + formatLayer(key, layers[key].value(area));
+  let value = formatLayer(key, layers[key].value(area));
+  if (key === "olderCount" && area.olderShare !== null) value += " · " + formatLayer("olderShare", area.olderShare);
+  if (key === "olderShare" && area.olderCount !== null) value += " · " + formatLayer("olderCount", area.olderCount);
+  $("detail").textContent = label + " · " + value;
 }
 
 function selectArea(id, scale, center = false) {

@@ -58,15 +58,78 @@ function treeRankReason(trees, index) {
   return explanation.filter(Boolean).join(" ") || "This is the only species in the catalog that fits the conditions checked here.";
 }
 
+const wiredClearances = [
+  { key: "poleDistance", label: "Utility pole", minimum: 3 },
+  { key: "treeDistance", label: "Nearest tree", minimum: 5 },
+  { key: "cornerDistance", label: "Street corner", minimum: 5 },
+  { key: "lightDistance", label: "Streetlight", minimum: 5 },
+  { key: "drivewayDistance", label: "Driveway or dropped curb", minimum: 1 },
+  { key: "drainDistance", label: "Storm drain or inspection cover", minimum: 2 },
+];
+
+function treeSeparation(size) {
+  if (size === "small") return 5;
+  if (size === "medium") return 6.5;
+  return 8.5;
+}
+
+function measured(value) {
+  return value == null || value === "" ? NaN : Number(value);
+}
+
+function recommendWiredTrees(site, catalog) {
+  const answer = (status, message, issues = [], trees = []) => ({ status, message, issues, trees });
+  const total = measured(site.total);
+  const free = measured(site.free);
+  const width = measured(site.bedWidth);
+  const area = measured(site.bedArea);
+  if (!Number.isFinite(total)) return answer("pending", "Measure the full sidewalk width to continue.");
+  if (total < 1.9) return answer("blocked", `São Paulo’s guide calls for a sidewalk at least 1.90 m wide. This spot is ${(1.9 - total).toFixed(2)} m short.`);
+  if (site.city !== "sao-paulo" || site.biome !== "atlantic-forest") return answer("pending", "This species list covers the municipality of São Paulo in the Atlantic Forest. Ask your city which native trees and clearance rules apply here.");
+  if (total > 3 || total === 2.8) return answer("pending", "This sidewalk width needs a site check with the city before choosing a tree under overhead wires.");
+  if (site.tree === "Presente") return answer("blocked", "An existing tree occupies the planting spot. Choose another point.");
+  if (site.tree !== "Ausente" || ![free, width, area].every(Number.isFinite)) return answer("pending", "Confirm the planting point, clear walking space and planting bed measurements.");
+  if (free < 1.2) return answer("blocked", `Keep at least 1.20 m for walking. The clear path is ${(1.2 - free).toFixed(2)} m short.`);
+  if (free > total) return answer("blocked", "The clear walking space must fit within the total sidewalk width.");
+  const bedProblem = plantingBedProblem(total, free, width, area);
+  if (bedProblem) {
+    const { minWidth, minArea } = plantingBedLimits(total);
+    const issues = [];
+    if (width < minWidth) issues.push(`Planting bed width: ${(minWidth - width).toFixed(2)} m short.`);
+    if (area < minArea) issues.push(`Open-soil area: ${(minArea - area).toFixed(2)} m² short.`);
+    if (width > total - free + 1e-6) issues.push(`The planting bed encroaches ${(width - total + free).toFixed(2)} m into the clear walking space.`);
+    return answer("blocked", bedProblem, issues);
+  }
+  if (!site.nearbyTreeSize || wiredClearances.some(({ key }) => !Number.isFinite(measured(site[key])))) {
+    return answer("pending", "Confirm the distances to nearby objects before choosing a tree.");
+  }
+  const issues = wiredClearances.flatMap(({ key, label, minimum }) => {
+    const limit = key === "treeDistance" ? treeSeparation(site.nearbyTreeSize) : minimum;
+    const distance = measured(site[key]);
+    return distance < limit ? [`${label}: ${distance.toFixed(2)} m measured, ${limit.toFixed(2)} m required. Move the planting point at least ${(limit - distance).toFixed(2)} m farther from this object.`] : [];
+  });
+  if (issues.length) return answer("blocked", "The planting point is too close to one or more objects.", issues);
+  const { trunkLimit } = plantingBedLimits(total);
+  const candidates = catalog.filter(tree => tree.native && !tree.invasive && tree.wiredTraits && tree.codes.includes("P")
+    && tree.height[1] <= 5 && tree.trunk[1] <= trunkLimit)
+    .sort((a, b) => treeRankingCriteria.map(({ compare }) => compare(a, b)).find(Boolean) ?? 0);
+  const trees = candidates.slice(0, 3).map((tree, index) => ({
+    ...tree, rankReason: index ? treeRankReason(candidates, index) : tree.wiredTraits.fit,
+  }));
+  return trees.length
+    ? answer("candidate", "The spot passes the measured checks. Before planting, have the city and electricity provider check the line, underground utilities and other obstacles, including larger trees nearby.", [], trees)
+    : answer("pending", "The measurements pass, but the catalog has no verified native sidewalk tree with an adult height of 5 m or less for this spot.");
+}
+
 function recommendTrees(site, catalog) {
   const pending = (message) => ({ message, trees: [] });
-  const measure = (value) => value == null || value === "" ? NaN : Number(value);
-  const total = measure(site.total);
-  const free = measure(site.free);
-  const bedWidth = measure(site.bedWidth);
-  const bedArea = measure(site.bedArea);
+  const total = measured(site.total);
+  const free = measured(site.free);
+  const bedWidth = measured(site.bedWidth);
+  const bedArea = measured(site.bedArea);
   if (!site.place) return pending("Confirm the site type to continue.");
   if (site.place !== "calcada") return pending("This ranking covers sidewalks. Request a site assessment for this location.");
+  if (site.wires === "Presente") return recommendWiredTrees(site, catalog);
   if (![total, free].every(Number.isFinite)) return pending("Enter the total sidewalk width and the clear space for pedestrians.");
   if (free > total) return pending("The clear walking space must fit within the total width. Check your measurements.");
   if (total < 1.9 || free < 1.2) return pending("These measurements are below the thresholds in the municipal planting guide.");
@@ -101,7 +164,7 @@ function recommendTrees(site, catalog) {
   }
   const minimumColumn = code === "P" ? 1 : /^M\d+$/.test(code) ? 2 : /^G\d+$/.test(code) ? 3 : Infinity;
   if (Number(site.clearance) < minimumColumn) return pending("The entered code requires a higher verified clearance column.");
-  const trees = catalog.filter((tree) => tree.native && tree.codes.includes(code) && tree.trunk[1] <= trunkLimit)
+  const trees = catalog.filter((tree) => tree.native && !tree.invasive && !tree.wiredOnly && tree.codes.includes(code) && tree.trunk[1] <= trunkLimit)
     .sort((a, b) => treeRankingCriteria.map(({ compare }) => compare(a, b)).find(Boolean) ?? 0);
   return trees.length
     ? { code, trees: trees.slice(0, 4).map((tree, index) => ({ ...tree, rankReason: treeRankReason(trees, index) })), message: `Candidate species for code ${code}. Final suitability and current stock require confirmation.` }

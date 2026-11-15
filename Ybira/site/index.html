@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ybirá | Urban forestry</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="ubs.css">
 <header class="mast"><strong>Ybirá</strong><span>São Paulo · Brasilândia pilot</span></header>
 <main>
   <h1>Where should the next tree go?</h1>
@@ -67,6 +68,8 @@
           <option value="income">Median household-head income</option>
           <option value="equity">Black and Brown population share</option>
           <option value="exposure">Residents on blocks without trees</option>
+          <option value="olderShare">People aged 65+ · percentage</option>
+          <option value="olderCount">People aged 65+ · count</option>
         </select>
       </label>
       <div id="map-stage">
@@ -78,6 +81,15 @@
       </div>
       <label class="map-select" for="map-district">Find a district<select id="map-district"><option value="">Select a district</option></select></label>
       <label class="map-select" id="map-sector-control" for="map-area" hidden>Find a census area in Brasilândia<select id="map-area"><option value="">Select a census area</option></select></label>
+      <label class="ubs-toggle"><input type="checkbox" id="ubs-toggle"> Show public health clinics (UBSs)</label>
+      <section id="ubs-panel" class="ubs-panel" aria-label="Public health clinics" hidden>
+        <p class="small">GeoSampa points in and around the Brasilândia pilot.</p>
+        <label class="map-select" for="ubs-select">Find a clinic
+          <select id="ubs-select"><option value="">Select a clinic</option></select>
+        </label>
+        <p id="ubs-details" class="small" aria-live="polite"></p>
+        <a id="ubs-directions" target="_blank" rel="noopener noreferrer" hidden>Open clinic location on a street map</a>
+      </section>
       <p class="small">Scroll or pinch to zoom. Drag to move. Select an area to see its data.</p>
       <p class="small">District names appear as you zoom, followed by named IBGE communities where available.</p>
       <p class="small map-legend-title" id="legend-title"></p>
@@ -92,11 +104,13 @@
 <script src="data.js"></script>
 <script src="organization-data.js"></script>
 <script src="district-data.js"></script>
+<script src="age-data.js"></script>
 <script src="priority.js"></script>
 <script src="catalog.js"></script>
 <script src="recommend.js"></script>
 <script src="interpretar-local.js"></script>
 <script src="app.js"></script>
+<script src="ubs.js"></script>
 <script src="organizations.js"></script>
 <script src="planting.js"></script>
 </html>

@@ -16,6 +16,16 @@ window.ybiraCatalog = [
   {name:"Angelim-doce", scientific:"Andira fraxinifolia", codes:["M2","M6","M8"], size:"Medium", established:false, height:[6,12], trunk:[30,40], crown:"Horizontal elliptical", native:true, stock:null, table:"05 · 32–33", annex:"70–71", note:"Attracts wildlife"},
   {name:"Ipê-amarelo", scientific:"Handroanthus chrysotrichus", codes:["M1","M3","M4","M5","M7","M9","M10","M11","M12"], size:"Medium", established:true, height:[4,10], trunk:[30,40], crown:"Vertical elliptical", native:true, stock:231, table:"05 · 32–33", annex:"68–69"},
   {name:"Guabiroba", scientific:"Campomanesia xanthocarpa", codes:["G1","G3","G6","G7","G8","G10","G11","G13","G14","G15"], size:"Large", established:false, height:[10,20], trunk:[30,50], crown:"Vertical elliptical", native:true, stock:70, table:"06 · 36–37", annex:"72–73", note:"Deciduous; attracts wildlife"},
+  {name:"Ipê-rosa-anão", scientific:"Handroanthus heptaphyllus var. paulensis", codes:["P"], size:"Small", established:true, height:[3,5], trunk:[10,20], crown:"Open", native:true, stock:null, table:"04 · 31", annex:"68–69", wiredOnly:true,
+    wiredTraits: {
+      roots: "Root type not documented for the dwarf form.",
+      heat: "Heat and drought tolerance not verified for the dwarf form.",
+      fruit: "Dry seed capsules documented for the species.",
+      wildlife: "Bees pollinate the flowers at the species level.",
+      fit: "The city’s guide lists the dwarf form at 3–5 m with an open crown. Ask the nursery for this exact form and have the site checked before planting.",
+      source: "https://www.prefeitura.sp.gov.br/cidade/secretarias/upload/meio_ambiente/MARBOURB.pdf#page=66",
+    },
+  },
 ];
 
 // Reference photos keyed by the exact scientific name in the catalog.

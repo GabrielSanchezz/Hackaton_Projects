@@ -59,6 +59,8 @@
         ["Vegetation cover", x => x.vegetation === null ? "—" : pct(x.vegetation)],
         ["Median income", x => x.income === null ? "—" : currency.format(x.income)],
         ["Black and Brown population", x => x.equity === null ? "—" : pct(x.equity)],
+        ["Residents aged 65+ (count)", x => x.olderCount === null ? "—" : fmt(x.olderCount)],
+        ["Residents aged 65+ (share)", x => x.olderShare === null ? "—" : pct(x.olderShare)],
         ["Residents on blocks without trees", x => x.exposed === null ? "—" : pct(x.exposed)],
         ["Residents on blocks without trees (count)", x => x.exposed === null ? "—" : fmt(x.without)],
       ];
@@ -116,12 +118,14 @@
       metric("Potential exposure", area.exposed === null ? "—" : pct(area.exposed), "Residents on street blocks without trees"),
       metric("Vegetation cover", area.vegetation === null ? "—" : pct(area.vegetation), district ? "Share of district mapped as vegetation · 2020 indicator" : "Share of land mapped as vegetation · 2017–18 imagery"),
       metric("Median income", area.income === null ? "—" : currency.format(area.income), "Monthly income of household heads with earnings · 2022"),
+      metric("Residents aged 65+", area.olderCount === null ? "—" : fmt(area.olderCount), area.olderShare === null ? "Census 2022 · share unavailable" : pct(area.olderShare) + " of residents · Census 2022"),
     );
     profile.replaceChildren(heading, el("p", (district ? "District " : "Census area ") + id + (area.population === null ? "" : " · " + fmt(area.population) + " residents (Census 2022)"), "small"), metrics);
     const coverage = area.sampled > 0 ? pct(area.pixels / area.sampled) + " valid pixels (" + area.pixels + "/" + area.sampled + ")" : "No sample";
     profile.append(el("p", "Nov 29, 2025 · Landsat 9 · " + coverage + ". Surface readings are a snapshot of roofs and ground.", "small"));
     if (!area.heat) profile.append(el("p", "Satellite coverage is too limited to show a comparable heat estimate.", "small"));
     profile.append(scoreChart(area));
+    if (area.olderShare !== null) profile.append(bar("Residents aged 65+", area.olderShare, fmt(area.olderCount) + " people · " + pct(area.olderShare), "#775b8c"));
 
     if (area.exposed !== null) {
       profile.append(bar("Residents on blocks without trees", area.exposed, fmt(area.without) + " of " + fmt(area.assessed), "#b75736"));
@@ -173,6 +177,7 @@
       current.priority == null ? "Priority score unavailable." : "Planting priority: " + fmt(current.priority) + "/100.",
       current.heat ? "Landsat 9, Nov 29 2025: " + temperature(current.mean) + " average surface heat; " + temperature(current.max) + " hottest valid pixel." : "Surface heat has insufficient coverage.",
       current.exposed === null ? "Street tree data unavailable." : fmt(current.without) + " of " + fmt(current.assessed) + " residents were on block faces without trees (Census 2022).",
+      current.olderShare === null ? "Age 65+ data unavailable." : fmt(current.olderCount) + " residents aged 65+ (" + pct(current.olderShare) + "; Census 2022).",
       "",
       "On site: identify a candidate spot; measure total sidewalk width, clear walking width and open soil; check overhead wires, nearby trees, utilities and clearances; confirm with the city before planting.",
       "Use the Ybirá sidewalk assessment: " + location.origin,

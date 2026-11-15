@@ -32,11 +32,17 @@ Os pesos propostos estão em `../site/priority.js`. Percentis de temperatura e r
 
 O score usa os mesmos pesos nas duas escalas. Os percentis distritais comparam os distritos entre si. Os percentis setoriais comparam somente os setores elegíveis da Brasilândia, cuja cobertura vegetal vem do cálculo sobre os polígonos do GeoSampa.
 
+### Moradores de 65 anos ou mais
+
+`gerar_idade65.py` gera `../site/age-data.js` a partir dos agregados do [Censo 2022 do IBGE](https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/), tabelas de Alfabetização para setor e distrito. Some `V00654` (65–69), `V00655` (70–79) e `V00656` (80 ou mais). Essas colunas contam moradores nas faixas etárias. O denominador é a população total da mesma geografia. Quando uma faixa está suprimida ou o setor não consta da tabela, o total 65+ fica indisponível. Os dados públicos permitem mostrar a contagem para os 96 distritos e para 405 dos 521 setores do piloto. A camada serve como apoio à vistoria e não altera o score de plantio.
+
 ## Assistente de plantio
 
 - `02_calcadas_brasilandia.geojson` reúne polígonos de calçada com largura mínima, máxima e o campo de largura média do serviço, além de declividade. As medidas descrevem o trecho. Confirme no ponto de plantio medidas, fiação, interferências e faixa livre.
 - `Manual_tecnico_arborizacao_SP.pdf` traz os parâmetros municipais e o repertório para a equipe de engenharia florestal montar e revisar o catálogo de espécies do assistente.
+- Na triagem com fiação, aplicam-se o mínimo de 1,90 m de calçada, 1,20 m de passagem livre e as dimensões do canteiro do [Manual de São Paulo, Tabelas 01–03](https://www.prefeitura.sp.gov.br/cidade/secretarias/upload/meio_ambiente/MARBOURB.pdf#page=24). O teto de 5 m de altura adulta e os mínimos de 3 m para postes e 5 m para iluminação pública são critérios adicionais do protótipo. Ipê-rosa-anão está na Tabela 04 e no Anexo I e deve ser conferido como forma anã no viveiro. A vistoria municipal e a consulta à concessionária são necessárias para avaliar o local e a rede.
 - As camadas `apoio_*` trazem árvores viárias do levantamento histórico, escolas públicas, UBS/postos/centros de saúde e paradas de ônibus. Use o inventário de árvores como referência histórica.
+- A sobreposição de UBSs do piloto usa os 21 pontos de unidades básicas do arquivo `apoio_ubs_brasilandia.geojson` (GeoSampa), dos quais 16 estão no distrito e cinco nos arredores. O seletor ordena as unidades pela distância aproximada em linha reta desde o centro do setor no mapa. O painel fornece endereço e link para abrir a localização. A posição serve para planejar uma vistoria das rotas de acesso a pé.
 - Calçadas, vegetação e camadas de apoio foram extraídas pelo retângulo de abrangência do distrito, de −46,715504 a −46,663511 de longitude e de −23,481366 a −23,415180 de latitude. Elas podem incluir feições de distritos vizinhos. Os limites do piloto e os setores por código correspondem ao distrito.
 
 ## Fontes

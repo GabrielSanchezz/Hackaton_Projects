@@ -10,6 +10,7 @@
     .sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
   const guide = "https://drive.prefeitura.sp.gov.br/cidade/secretarias/subprefeituras/upload/se/MARBOURB.pdf#page=27";
   const city = "https://prefeitura.sp.gov.br/web/meio_ambiente/w/parques/284396";
+  const sizeGuide = "Adult-height examples from the city guide: small, dwarf ipê 3–5 m; medium, pitanga 6–12 m; large, grumixama 10–15 m. The ranges overlap by species.";
   const yesNo = [["Presente", "Yes"], ["Ausente", "No"]];
   const questions = {
     place: {
@@ -27,6 +28,24 @@
       label: "Are there wires above the spot?",
       help: "Look up from ground level. Check for wires crossing or running along the planting spot. If you see a wire or are unsure what it carries, choose Yes or check later.",
       options: yesNo,
+    },
+    city: {
+      label: "Which municipality is this sidewalk in?",
+      help: "São Paulo means the municipality itself. Select another municipality if the sidewalk is elsewhere in the state.",
+      options: [["sao-paulo", "São Paulo, SP"], ["other", "Another municipality"]],
+      defaultValue: "sao-paulo",
+    },
+    biome: {
+      label: "Which biome is the planting site in?",
+      help: "The native tree list used here covers São Paulo’s Atlantic Forest context. Choose another option if you are outside that context.",
+      options: [["atlantic-forest", "Atlantic Forest"], ["other", "Another biome or not sure"]],
+      defaultValue: "atlantic-forest",
+    },
+    nearbyTreeSize: {
+      label: "How big is the nearest tree when fully grown?",
+      help: "If you know its species, use its adult size from the guide. If you have checked that there is no tree within 8.50 m, choose Unsure / no tree within 8.50 m and enter 8.50 m for the distance.",
+      minimum: sizeGuide,
+      options: [["small", "Small"], ["medium", "Medium"], ["large", "Large"], ["unknown", "Unsure / no tree within 8.50 m"]],
     },
     tree: {
       label: "Is there already a tree right where you want to plant?",
@@ -54,6 +73,7 @@
       help: "Start at the point where the new trunk would go. Measure along the ground to nearby objects. For a corner, use the point where the two property lines would meet. Choose the largest size for which every relevant distance in the guide is met. If a buried pipe or another distance is uncertain, choose “I’ll check later”.",
       options: [["1", "Only enough room for a small tree"], ["2", "Enough room for a medium tree"], ["3", "Enough room for a large tree"], ["0", "Too close even for a small tree"]],
       distances: true,
+      minimum: sizeGuide,
     },
     setback: {
       label: "Is the building set back from the sidewalk?",
@@ -71,6 +91,22 @@
       options: codes.map((code) => [code, code]),
     },
   };
+  const measuringHelp = {
+    poleDistance: "Measure to the base of the nearest utility pole.",
+    treeDistance: "Measure to the nearest tree trunk. The guide requires more space if the existing tree is larger.",
+    cornerDistance: "Measure to the point where the two property lines would meet at the corner.",
+    lightDistance: "Measure to the base of the nearest streetlight pole. If it shares the utility pole, enter the same distance.",
+    drivewayDistance: "Measure to the nearest edge of the driveway ramp or dropped curb.",
+    drainDistance: "Measure to the nearest edge of a storm drain or inspection cover.",
+  };
+  for (const { key, label, minimum } of wiredClearances) {
+    questions[key] = {
+      label: "Distance to " + label.toLowerCase(),
+      help: measuringHelp[key] + " Start at the spot where the new trunk would go. Measure along the ground. If the object is farther away, enter a distance you can confirm.",
+      measure: true,
+      minimum: key === "treeDistance" ? undefined : `Minimum: ${minimum.toFixed(2)} m.`,
+    };
+  }
   // Municipal planting guide, Table 03. Columns contain distances in meters.
   const distances = [
     ["Street corner", 5, 5, 5],
@@ -176,7 +212,7 @@
       control.add(new Option("Choose an answer", ""));
       for (const [value, label] of spec.options) control.add(new Option(label, value));
     }
-    control.value = answers[name] ?? "";
+    control.value = answers[name] ?? spec.defaultValue ?? "";
     control.required = step !== "review";
     const row = element("div", "", "answer-control");
     row.append(control);
@@ -186,12 +222,13 @@
       row.append(unit);
     }
     const limits = plantingBedLimits(Number(answers.total));
-    const minimum = name === "bedWidth" && limits ? `Minimum width: ${limits.minWidth.toFixed(2)} m.` : spec.minimum;
+    const minimum = name === "bedWidth" && limits ? `Minimum width: ${limits.minWidth.toFixed(2)} m.`
+      : name === "treeDistance" ? "Minimum: 5.00 m for a small neighbor; up to 8.50 m for a larger or unknown tree." : spec.minimum;
     block.append(heading);
     if (minimum) {
       const hint = element("p", minimum, "small measurement-minimum");
       hint.id = `minimum-${name}`;
-      control.setAttribute("aria-describedby", `unit-${name} ${hint.id}`);
+      control.setAttribute("aria-describedby", spec.measure ? `unit-${name} ${hint.id}` : hint.id);
       block.append(hint);
     }
     block.append(row, copy);
@@ -254,7 +291,12 @@
     if (Number(answers.total) < 1.9) return null;
     if (answers.tree === "Presente") return null;
     if (!answers.wires) return "wires";
-    const needsSiteVisit = answers.wires !== "Ausente" || Number(answers.total) >= 2.4;
+    const wired = answers.wires === "Presente";
+    if (wired) {
+      if (!answers.city || !answers.biome) return "wiredLocation";
+      if (answers.city !== "sao-paulo" || answers.biome !== "atlantic-forest" || Number(answers.total) > 3 || Number(answers.total) === 2.8) return null;
+    }
+    const needsSiteVisit = !wired && Number(answers.total) >= 2.4;
     if (needsSiteVisit && !technicalMode) return "siteVisit";
     if (!answers.tree) return "tree";
     if (!answers.free) return "free";
@@ -262,6 +304,7 @@
     if (!answers.bedWidth || !answers.bedLength) return "bed";
     const area = plantingBedArea(answers.bedWidth, answers.bedLength);
     if (plantingBedProblem(Number(answers.total), Number(answers.free), Number(answers.bedWidth), area)) return null;
+    if (wired) return !answers.nearbyTreeSize || wiredClearances.some(({ key }) => !answers[key]) ? "wiredClearances" : null;
     if (!answers.clearance) return "clearance";
     if (answers.clearance === "0") return null;
     if (needsSiteVisit) return answers.code ? null : "code";
@@ -280,22 +323,44 @@
     const content = $("assessment-fields");
     content.replaceChildren();
     $("assessment-title").textContent = target === "review" ? "Check what Ybirá understood"
-      : target === "bed" ? "Measure the planting bed" : "Tell us a little more";
-    $("assessment-note").textContent = target === "review" ? "Correct anything that looks off before you continue." : "";
+      : target === "bed" ? "Measure the planting bed" : target === "wiredClearances" ? "Check distances under overhead wires"
+        : target === "wiredLocation" ? "Confirm the planting location" : "Tell us a little more";
+    $("assessment-note").textContent = target === "review" ? "Correct anything that looks off before you continue."
+      : target === "wiredClearances" ? "Measure from where the trunk would go. If you checked that an object is outside the required distance, you can enter that minimum. This screen covers native trees up to 5 m tall." : "";
     if (target === "bed") showBedMeasurements(content);
+    else if (target === "wiredLocation") content.append(question("city"), question("biome"));
+    else if (target === "wiredClearances") {
+      content.append(element("p", "For this wired-sidewalk screen, Ybirá adds a 3 m utility-pole minimum and a 5 m streetlight minimum.", "small"));
+      const nearby = question("nearbyTreeSize");
+      const distance = question("treeDistance");
+      const update = () => {
+        const size = nearby.querySelector("select").value;
+        const hint = distance.querySelector(".measurement-minimum");
+        if (size) hint.textContent = `Minimum: ${treeSeparation(size).toFixed(2)} m.`;
+      };
+      nearby.addEventListener("change", update);
+      content.append(nearby, distance);
+      for (const { key } of wiredClearances) if (key !== "treeDistance") content.append(question(key));
+      update();
+    }
     else for (const name of target === "review" ? extracted : [target]) content.append(question(name));
-    $("assessment-skip").hidden = !["total", "free", "wires", "tree", "bed", "clearance", "setback", "traffic"].includes(target);
+    $("assessment-skip").hidden = !["total", "free", "wires", "tree", "bed", "clearance", "setback", "traffic", "wiredClearances"].includes(target);
     $("assessment-back").textContent = history.length ? "Back" : "Back to description";
     $("assessment-next").textContent = target === "code" ? "Find my trees" : "Continue";
     $("assessment-title").focus();
   }
 
-  function finish(title, text, trees = [], provisional = false) {
+  function finish(title, text, trees = [], provisional = false, issues = []) {
     form.hidden = true;
     result.hidden = false;
     const heading = element("h3", title);
     heading.tabIndex = -1;
     result.replaceChildren(heading, element("p", text));
+    if (issues.length) {
+      const list = element("ul");
+      for (const issue of issues) list.append(element("li", issue));
+      result.append(list);
+    }
     if (trees.length) {
       const ranking = element("ol", "", "tree-ranking");
       for (const tree of trees) {
@@ -319,11 +384,26 @@
         const stock = tree.stock === null ? "Ask the nursery about availability." : `${tree.stock} seedlings in the October 2026 inventory.`;
         item.append(element("p", `${use} ${stock}`));
         item.append(element("p", tree.rankReason, "tree-rank-reason"));
+        if (tree.wiredTraits) {
+          const traits = element("ul", "", "small");
+          for (const key of ["roots", "heat", "fruit", "wildlife"]) traits.append(element("li", tree.wiredTraits[key]));
+          item.append(traits, link("See the municipal species entry", tree.wiredTraits.source));
+        }
         ranking.append(item);
       }
       result.append(ranking);
       if (!provisional) result.append(element("p", "Confirm the planting spot and current seedling availability with the city."));
     }
+    if (!trees.length) {
+      const options = element("ul");
+      for (const idea of [
+        "Plant a small native tree inside the property, in a setback, garden or yard with enough room.",
+        "Grow a native climbing plant on a sunny wall or facade.",
+        "Ask the city about an approved planting bed in the parking lane next to the curb.",
+      ]) options.append(element("li", idea));
+      result.append(element("h4", "Other ways to add shade"), options);
+    }
+    result.append(element("p", "Rules are based on São Paulo’s Urban Forestry Technical Manual. Confirm local rules and any required authorization with your municipality.", "small"));
     const actions = element("div", "", "form-actions");
     const back = element("button", "Review my answers", "text-button");
     back.type = "button";
@@ -332,7 +412,8 @@
     restart.type = "button";
     restart.addEventListener("click", reset);
     actions.append(back, restart);
-    result.append(link("Ask São Paulo 156 about a planting visit", city), actions);
+    if (answers.city !== "other") result.append(link("Ask São Paulo 156 about a planting visit", city));
+    result.append(actions);
     heading.focus();
   }
 
@@ -361,7 +442,7 @@
       return;
     }
     if (answers.place === "calcada" && Number(answers.total) < 1.9) {
-      finish("Look for a wider spot", "The city’s guide calls for a sidewalk at least 1.90 m wide at the planting spot.");
+      finish("Do not plant on this sidewalk", `São Paulo’s guide calls for at least 1.90 m at the planting spot. This sidewalk is ${(1.9 - Number(answers.total)).toFixed(2)} m short and must leave 1.20 m clear for walking.`);
       return;
     }
     if (answers.place === "calcada" && answers.tree === "Presente") {
@@ -369,6 +450,15 @@
       return;
     }
     const assessment = evaluate();
+    if (answers.place === "calcada" && answers.wires === "Presente") {
+      const titles = {
+        candidate: "Small-tree planting may be possible (up to 5 m)",
+        blocked: "Do not plant at this spot",
+        pending: "Get this spot checked before planting",
+      };
+      finish(titles[assessment.status], assessment.message, assessment.trees, true, assessment.issues);
+      return;
+    }
     if (assessment.trees.length) {
       finish("Trees to consider for your sidewalk", "These trees fit the measurements and distances you confirmed.", assessment.trees);
       return;

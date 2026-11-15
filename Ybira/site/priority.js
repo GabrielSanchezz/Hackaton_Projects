@@ -6,7 +6,9 @@ function indicators(source, scale) {
     const heat = pixels >= 5 && pixels / sampled >= .8;
     const exposed = Number.isFinite(without) && assessed > 0 ? without / assessed : null;
     const equity = population > 0 && race[1] !== null && race[3] !== null ? (race[1] + race[3]) / population : null;
-    return [id, { id, scale, mean, max, pixels, sampled, without, assessed, population, race, income, name, vegetation, exposed, heat, equity }];
+    const olderCount = window.ybiraAge65[id] ?? null;
+    const olderShare = olderCount !== null && population > 0 ? olderCount / population : null;
+    return [id, { id, scale, mean, max, pixels, sampled, without, assessed, population, race, income, name, vegetation, exposed, heat, equity, olderCount, olderShare }];
   }));
 }
 
