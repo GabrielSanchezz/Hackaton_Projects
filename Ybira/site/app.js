@@ -121,7 +121,7 @@ $("interpret").addEventListener("submit", async (event) => {
     if (input.value) count++;
   }
   showMeasurements();
-  const mode = automatic ? "Interpretação com Gemini." : "Preenchimento básico por regras. A IA está indisponível.";
+  const mode = automatic ? "Interpretação com IA da Groq." : "Preenchimento básico por regras. A IA está indisponível.";
   status.textContent = count
     ? `${mode} Confira os campos preenchidos e complete o que faltar.`
     : `${mode} Nenhum campo em branco foi preenchido. Confira o formulário.`;
