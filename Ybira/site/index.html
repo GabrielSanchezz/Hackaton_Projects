@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ybirá | Arborização urbana</title>
+<link rel="stylesheet" href="style.css">
+<header class="mast"><strong>Ybirá</strong><span>São Paulo · Piloto Brasilândia</span></header>
+<main>
+  <h1>Onde plantar a próxima árvore?</h1>
+  <p class="intro">Explore o calor e a arborização no entorno. Depois, confira o local antes de escolher a espécie.</p>
+  <nav aria-label="Público">
+    <button id="citizen-tab" aria-pressed="true">Cidadão</button>
+    <button id="org-tab" aria-pressed="false">Organizações</button>
+  </nav>
+  <div class="grid">
+    <section class="panel" aria-labelledby="map-title">
+      <div class="row"><h2 id="map-title">São Paulo</h2><button id="zoom">Entrar na Brasilândia</button></div>
+      <svg id="map" viewBox="0 0 360 350" aria-label="Mapa interativo de temperatura"></svg>
+      <p class="small">Temperatura da superfície · Landsat 9 · 29/11/2025</p>
+      <div class="legend" aria-label="Faixas em graus Celsius"><span>&lt;33 °C</span><span>33–37</span><span>37–41</span><span>41–45</span><span>45+</span></div>
+      <p id="detail" aria-live="polite"></p>
+    </section>
+    <section class="panel" id="citizen">
+      <h2>Verificar uma calçada</h2>
+      <form id="plant">
+        <label>Endereço completo <input id="address" placeholder="Rua, número, bairro" autocomplete="street-address"></label>
+        <p class="small">Entre na Brasilândia e selecione no mapa o setor do endereço.</p>
+        <div class="fields">
+          <label>Largura total (m)<input name="total" type="number" step="0.01" min="0" required></label>
+          <label>Faixa livre (m)<input name="free" type="number" step="0.01" min="0" required></label>
+        </div>
+        <label>Fiação aérea<select name="wires"><option value="">A confirmar</option><option>Presente</option><option>Ausente</option></select></label>
+        <details><summary>Como medir</summary><p>Meça a largura total sem incluir a guia. Informe quanto do caminho ficaria livre para pedestres no ponto de plantio.</p></details>
+        <label>Código da Chave Arborizar, se já revisado
+          <select name="code" id="codes"><option value="">A confirmar</option></select>
+        </label>
+        <button type="submit">Ver orientação</button>
+      </form>
+      <div class="result" id="result" aria-live="polite"></div>
+      <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/parques/284396">Solicitar plantio gratuito pelo 156</a>
+    </section>
+    <section class="panel" id="org" hidden>
+      <h2>Planejar uma vistoria</h2>
+      <p>Três setores candidatos pelo cruzamento de calor e falta de árvores. A lista prioriza o número de moradores avaliados em faces de quadra sem árvores.</p>
+      <div id="targets"></div>
+      <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/servicos/viveiros/fornecimento_de_mudas/4465">Consultar fornecimento municipal de mudas a entidades</a>
+    </section>
+  </div>
+  <footer>Fontes: <a href="https://novogeosampa.prefeitura.sp.gov.br/">GeoSampa (CC BY-SA)</a>, <a href="https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/">IBGE</a>, <a href="https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-temperature">Landsat/USGS</a> e <a href="https://prefeitura.sp.gov.br/meio_ambiente/w/publicacoes_svma/188452">Manual municipal</a>.</footer>
+</main>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</html>
