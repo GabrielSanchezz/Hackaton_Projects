@@ -4,7 +4,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ybirá | Urban forestry</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="ubs.css">
 <link rel="stylesheet" href="ask.css">
 <link rel="stylesheet" href="design.css">
 <header class="site-header">
@@ -64,12 +63,13 @@
       </div>
       <form id="ask-form">
         <label for="ask-question">Your question</label>
-        <textarea id="ask-question" name="question" rows="2" maxlength="600" required placeholder="What should I check before planting on my sidewalk?"></textarea>
+        <textarea id="ask-question" name="question" rows="2" maxlength="600" required aria-describedby="ask-disclaimer" placeholder="What should I check before planting on my sidewalk?"></textarea>
         <div class="form-actions">
           <button type="submit" id="ask-submit" aria-label="Ask Ybirá"><svg class="icon" aria-hidden="true"><use href="identity.svg#send"></use></svg></button>
         </div>
         <p class="small" id="ask-status" role="status"></p>
       </form>
+      <p class="small ask-disclaimer" id="ask-disclaimer"><strong>AI prototype.</strong> Ask Ybirá can make mistakes or generate information that sounds accurate but is incorrect. Check the linked sources before acting on an answer.</p>
     </div>
   </details>
   </section>
@@ -129,7 +129,7 @@
         <span id="visit-status" class="small" role="status"></span>
       </div>
       <details class="ranking-source"><summary>How priorities are calculated</summary>
-        <p>The score uses 30 points for surface heat, 25 for lack of vegetation, and 15 each for lower income, the share of residents who identify as Black or Brown, and the share living on block faces without trees. Heat and income percentiles use the current scale: São Paulo districts or Brasilândia census areas. Compare scores within the same scale. The weights are a planning proposal for review with residents and partner organizations.</p>
+        <p>The score uses 30 points for surface heat, 25 for lack of vegetation, and 15 each for lower income, the share of Black and mixed-race residents, and the share living on block faces without trees. Heat and income percentiles use the current scale: São Paulo districts or Brasilândia census areas. Compare scores within the same scale. The weights are a planning proposal for review with residents and partner organizations.</p>
         <p>The race factor is an area-level equity measure. An area needs all five indicators, at least five valid satellite pixels and at least 80% valid pixel coverage to receive a score. Income is the median for household heads with earnings.</p>
       </details>
       <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/servicos/viveiros/fornecimento_de_mudas/4465">São Paulo’s seedling program for organizations</a>
@@ -143,7 +143,7 @@
           <option value="peak">Hottest surface pixel</option>
           <option value="vegetation">Vegetation cover</option>
           <option value="income">Median household-head income</option>
-          <option value="equity">Black and Brown population share</option>
+          <option value="equity">Black and mixed-race population share</option>
           <option value="exposure">Residents on blocks without trees</option>
           <option value="olderShare">People aged 65+ · percentage</option>
           <option value="olderCount">People aged 65+ · count</option>
@@ -162,21 +162,7 @@
         <button type="button" id="ask-map" class="text-button" hidden>Ask about this area</button>
         <a id="map-profile-link" href="#profile-title" hidden>See the selected area’s charts</a>
       </div>
-      <details class="map-extra"><summary>Map options and help</summary>
       <label class="map-select" id="map-sector-control" for="map-area" hidden>Find a census area in Brasilândia<select id="map-area"><option value="">Select a census area</option></select></label>
-      <label class="ubs-toggle"><input type="checkbox" id="ubs-toggle"> Show public health clinics (UBSs)</label>
-      <section id="ubs-panel" class="ubs-panel" aria-label="Public health clinics" hidden>
-        <p class="small">GeoSampa points in and around the Brasilândia pilot.</p>
-        <label class="map-select" for="ubs-select">Find a clinic
-          <select id="ubs-select"><option value="">Select a clinic</option></select>
-        </label>
-        <p id="ubs-details" class="small" aria-live="polite"></p>
-        <a id="ubs-directions" target="_blank" rel="noopener noreferrer" hidden>Open clinic location on a street map</a>
-      </section>
-      <p class="small">Scroll or pinch to zoom. Drag to move. Select an area to see its data.</p>
-      <p class="small">District names appear as you zoom, followed by named IBGE communities where available.</p>
-      <p class="small">Gray areas lack comparable data for the selected layer.</p>
-      </details>
     </section>
       <aside id="dashboard-aside" class="dashboard-aside">
         <div id="resident-overview"></div>
@@ -186,7 +172,7 @@
         </div>
       </aside>
       <div id="workspace-actions" class="workspace-actions">
-        <a class="wide-action" href="#citizen" id="sidewalk-shortcut"><svg class="icon" aria-hidden="true"><use href="identity.svg#tree"></use></svg><span>Assess a sidewalk</span><svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
+        <a class="wide-action" href="#citizen" id="sidewalk-shortcut" data-planting-shortcut><svg class="icon" aria-hidden="true"><use href="identity.svg#tree"></use></svg><span>Assess a sidewalk</span><svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
         <button type="button" class="wide-action" id="export-view" hidden><svg class="icon" aria-hidden="true"><use href="identity.svg#download"></use></svg><span>Export selected area</span><svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></button>
         <a class="wide-action primary-action" href="#chat" data-view="chat"><svg class="action-mascot" aria-hidden="true"><use href="identity.svg#mascot"></use></svg><span>Talk to Ask Ybirá</span><svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
       </div>
@@ -205,53 +191,16 @@
         <div class="about-coverage" aria-label="Map coverage">
           <svg class="icon" aria-hidden="true"><use href="identity.svg#map"></use></svg>
           <strong>96 districts</strong><span>Citywide comparison</span>
-          <strong>Brasilândia</strong><span>Pilot with census tract, sidewalk and health clinic data</span>
+          <strong>Brasilândia</strong><span>Pilot with census tract and sidewalk data</span>
         </div>
       </header>
       <section class="panel about-panel about-mission" aria-labelledby="mission-title">
         <span class="pill-icon"><svg class="icon" aria-hidden="true"><use href="identity.svg#temperature"></use></svg></span>
         <div>
           <h2 id="mission-title">Why shade is a climate justice issue</h2>
-          <p>On the walk to a bus stop or health clinic, a street with few trees offers little shade. In São Paulo, exposure to heat overlaps with inequalities in income, race and access to green space. Ybirá brings those patterns into the same map so teams can see which areas warrant a closer look.</p>
+          <p>On the walk to a bus stop or school, a street with few trees offers little shade. In São Paulo, exposure to heat overlaps with inequalities in income, race and access to green space. Ybirá brings those patterns into the same map so teams can see which areas warrant a closer look.</p>
           <p>Planting native trees can support local biodiversity as well as increase shade as the trees grow. The project connects that long-term goal to two decisions people can make today: where to visit first and what to consider planting when they get there.</p>
         </div>
-      </section>
-      <section class="about-features" aria-labelledby="features-title">
-        <h2 id="features-title">What you can do with Ybirá</h2>
-        <div class="about-feature-grid">
-          <article class="panel about-feature">
-            <span class="pill-icon"><svg class="icon" aria-hidden="true"><use href="identity.svg#home"></use></svg></span>
-            <h3>Check a planting spot</h3>
-            <p>Describe your sidewalk or yard in your own words. Review the details Ybirá fills in, check the space and overhead wires, and see which native species could fit and why. When the site falls short, the guide explains what to check or where else to plant.</p>
-            <a class="about-link" href="#residents" data-view="residents">Open the resident guide <svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
-          </article>
-          <article class="panel about-feature">
-            <span class="pill-icon"><svg class="icon" aria-hidden="true"><use href="identity.svg#building"></use></svg></span>
-            <h3>Plan where to visit first</h3>
-            <p>NGOs and public teams can compare districts, switch map layers and see what drives the priority score. In Brasilândia, teams can zoom to a census tract and use nearby clinics as anchors for walking routes to inspect for shade.</p>
-            <a class="about-link" href="#organizations" data-view="organizations">Open the planning dashboard <svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
-          </article>
-          <article class="panel about-feature">
-            <img class="about-mascot" src="chat-avatar.svg" alt="" width="52" height="48">
-            <h3>Ask a question in plain language</h3>
-            <p>Ask how to measure a sidewalk, what a map layer means or which rules apply near power lines. Ask Ybirá looks up relevant material in a curated set of public sources and uses the selected area when available.</p>
-            <a class="about-link" href="#chat" data-view="chat">Talk to Ask Ybirá <svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
-          </article>
-        </div>
-      </section>
-      <section class="panel about-panel about-method" aria-labelledby="method-title">
-        <h2 id="method-title">How the map, planting guide and AI work</h2>
-        <div class="about-method-grid">
-          <div>
-            <h3>A score you can inspect</h3>
-            <p>The map uses Landsat surface temperature, GeoSampa, the IBGE 2022 Census and district vegetation data from Rede Nossa São Paulo. The score weights surface heat (30%), lack of vegetation (25%), lower income of household heads (15%), the share of Black and Brown residents (15%) and residents on blocks without trees (15%). The 65+ layer shows counts and percentages to inform field visits.</p>
-          </div>
-          <div>
-            <h3>AI for questions and descriptions</h3>
-            <p>AI can turn a site description into editable fields and explain retrieved guidance with source links. Planting eligibility and species ranking use explicit checks from São Paulo’s planting guide, additional prototype criteria and a curated catalog of native trees.</p>
-          </div>
-        </div>
-        <p class="about-scope">The heat layer shows land surface temperature from one satellite pass. Use the dashboard to prioritize field visits, then confirm measurements, local requirements and any needed permissions before planting.</p>
       </section>
       <section class="panel about-panel" aria-labelledby="motivation-title">
         <h2 id="motivation-title">The reporting and research behind the project</h2>
@@ -344,7 +293,66 @@
     </div>
   </section>
   <section id="how-view" class="info-view" aria-labelledby="how-title">
-    <article class="panel info-panel"><h1 id="how-title">From map to site visit</h1><ol><li>Select a district or census area and switch between the heat, vegetation and priority layers.</li><li>Use the priority breakdown and field checklist to decide where to visit.</li><li>Check sidewalk width, wires and nearby obstacles before choosing a native tree.</li></ol><a class="header-action" href="#residents" data-view="residents">Check a sidewalk <svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a></article>
+    <div class="about-content">
+      <header class="about-hero">
+        <div>
+          <h1 id="how-title">From description to recommendations</h1>
+          <p class="about-intro">Describe the spot where you want a tree. Ybirá helps you check what fits and explains why.</p>
+          <a class="header-action" href="#citizen" data-planting-shortcut>Check a planting spot <svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
+        </div>
+        <div class="about-coverage how-example">
+          <svg class="icon" aria-hidden="true"><use href="identity.svg#rules"></use></svg>
+          <span>Example description</span>
+          <blockquote>“My sidewalk is about two meters wide, and there are wires overhead.”</blockquote>
+          <dl><div><dt>Sidewalk width</dt><dd>2 m</dd></div><div><dt>Overhead wires</dt><dd>Yes</dd></div></dl>
+        </div>
+      </header>
+      <section class="panel about-panel" aria-labelledby="steps-title">
+        <h2 id="steps-title">Find a tree in three steps</h2>
+        <ol class="how-steps">
+          <li><span aria-hidden="true">1</span><div><h3>Describe the spot</h3><p>Type what you already know in English or Portuguese. Start with the sidewalk width and whether you see wires overhead.</p></div></li>
+          <li><span aria-hidden="true">2</span><div><h3>Confirm the details</h3><p>Review the answers AI filled in. Use the measurement tips if a detail needs checking. You can also fill in the form yourself.</p></div></li>
+          <li><span aria-hidden="true">3</span><div><h3>See what fits</h3><p>Get up to four ranked native trees, with a reason for each. If the spot needs another check or is too small, Ybirá explains what to do next.</p></div></li>
+        </ol>
+      </section>
+      <section aria-labelledby="features-title">
+        <h2 id="features-title">What you can do with Ybirá</h2>
+        <div class="how-feature-grid">
+          <article class="panel how-feature">
+            <span class="pill-icon"><svg class="icon" aria-hidden="true"><use href="identity.svg#home"></use></svg></span>
+            <h3>Explore your district</h3>
+            <p>Choose a district on the map to see how hot its surfaces got and how much of the area has vegetation cover. Browse native trees in the resident view.</p>
+            <a class="how-link" href="#residents" data-view="residents">Open the resident view <svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
+          </article>
+          <article class="panel how-feature">
+            <span class="pill-icon"><svg class="icon" aria-hidden="true"><use href="identity.svg#building"></use></svg></span>
+            <h3>Decide where to visit first</h3>
+            <p>NGOs and public teams can compare districts, switch map layers, see what drives the priority score and take a checklist into the field.</p>
+            <a class="how-link" href="#organizations" data-view="organizations">Open the planning dashboard <svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
+          </article>
+          <article class="panel how-feature">
+            <img class="how-mascot" src="chat-avatar.svg" alt="" width="52" height="48">
+            <h3>Ask about planting or the map</h3>
+            <p>Try “How do I measure my sidewalk?” or “Which factors drive Brasilândia’s score?” Ask Ybirá draws on public guidance and map data, with links to the sources it uses.</p>
+            <a class="how-link" href="#chat" data-view="chat">Talk to Ask Ybirá <svg class="icon" aria-hidden="true"><use href="identity.svg#arrow"></use></svg></a>
+          </article>
+        </div>
+      </section>
+      <section class="panel about-panel how-method" aria-labelledby="method-title">
+        <h2 id="method-title">How the map, planting guide and AI work</h2>
+        <div class="how-method-grid">
+          <div>
+            <h3>How areas are ranked</h3>
+            <p>The map combines Landsat, GeoSampa, the IBGE 2022 Census and vegetation data from Rede Nossa São Paulo. The score weights surface heat (30%), lack of vegetation (25%), lower household-head income (15%), the share of Black and mixed-race residents (15%) and residents on blocks without trees (15%).</p>
+          </div>
+          <div>
+            <h3>How trees are recommended</h3>
+            <p>When you describe a spot, AI fills in details like sidewalk width and overhead wires for you to check. Once you confirm the details, the guide applies city and prototype rules, then ranks the native trees that fit using the project catalog.</p>
+          </div>
+        </div>
+        <p class="about-scope">The heat map shows land surface temperature from one satellite pass. Before planting, measure the spot and confirm local requirements and any needed permissions.</p>
+      </section>
+    </div>
   </section>
   <footer>Sources: <a href="https://novogeosampa.prefeitura.sp.gov.br/">GeoSampa (CC BY-SA)</a>, <a href="https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/">IBGE</a>, <a href="https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-temperature">Landsat/USGS</a>, <a href="https://nossasaopaulo.org.br/o-que-fazemos/mapa-da-desigualdade/">Rede Nossa São Paulo (district vegetation)</a> and <a href="https://prefeitura.sp.gov.br/meio_ambiente/w/publicacoes_svma/188452">Municipal planting guide</a>.</footer>
 </main>
@@ -357,8 +365,6 @@
 <script src="recommend.js"></script>
 <script src="interpretar-local.js"></script>
 <script src="app.js"></script>
-<script src="clinic-data.js"></script>
-<script src="ubs.js"></script>
 <script src="organizations.js"></script>
 <script src="planting.js"></script>
 <script src="ask.js"></script>

@@ -4,7 +4,7 @@
   const profile = $("org-profile");
   const targets = $("targets");
   const missing = "Data unavailable";
-  const categories = ["White · Branca", "Black · Preta", "Asian · Amarela", "Brown · Parda", "Indigenous · Indígena"];
+  const categories = ["White · Branca", "Black · Preta", "Asian · Amarela", "Mixed-race · Parda", "Indigenous · Indígena"];
   const currency = new Intl.NumberFormat("en", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
   const pct = value => fmt(value * 100) + "%";
   const temperature = value => fmt(value) + " °C";
@@ -58,7 +58,7 @@
         ["Avg. surface heat", x => x.heat ? temperature(x.mean) : "—"],
         ["Vegetation cover", x => x.vegetation === null ? "—" : pct(x.vegetation)],
         ["Median income", x => x.income === null ? "—" : currency.format(x.income)],
-        ["Black and Brown population", x => x.equity === null ? "—" : pct(x.equity)],
+        ["Black and mixed-race population", x => x.equity === null ? "—" : pct(x.equity)],
         ["Residents aged 65+ (count)", x => x.olderCount === null ? "—" : fmt(x.olderCount)],
         ["Residents aged 65+ (share)", x => x.olderShare === null ? "—" : pct(x.olderShare)],
         ["Residents on blocks without trees", x => x.exposed === null ? "—" : pct(x.exposed)],

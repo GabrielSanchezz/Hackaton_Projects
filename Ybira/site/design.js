@@ -77,6 +77,72 @@
     container.replaceChildren(el("p", area.name ?? area.id, "small score-location"), pair);
   }
 
+  function openPlantingGuide(event) {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (current !== "residents") window.openYbira("residents", false);
+    $("citizen").scrollIntoView({ block: "start" });
+    $("description").focus({ preventScroll: true });
+  }
+
+  function treeCarousel() {
+    const species = el("section", null, "panel dashboard-card");
+    const header = el("div", null, "species-header");
+    const speciesHeading = el("h2", "Explore native trees");
+    speciesHeading.id = "species-heading";
+    species.setAttribute("aria-labelledby", speciesHeading.id);
+    speciesHeading.prepend(icon("leaf"));
+    const previews = el("div", null, "species-teasers");
+    previews.id = "native-tree-cards";
+    const controls = el("div", null, "species-controls");
+    const previous = el("button");
+    const next = el("button");
+    for (const [button, label, direction] of [[previous, "Previous trees", -1], [next, "Next trees", 1]]) {
+      button.type = "button";
+      button.setAttribute("aria-label", label);
+      button.setAttribute("aria-controls", previews.id);
+      button.append(icon("arrow"));
+      button.addEventListener("click", () => {
+        const card = previews.firstElementChild;
+        previews.scrollBy({
+          left: direction * (card.getBoundingClientRect().width + parseFloat(getComputedStyle(previews).columnGap)),
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+        });
+      });
+      controls.append(button);
+    }
+    function scrollState() {
+      previous.disabled = previews.scrollLeft < 1;
+      next.disabled = previews.scrollWidth - previews.clientWidth - previews.scrollLeft < 2;
+    }
+    previous.disabled = true;
+    previews.addEventListener("scroll", scrollState, { passive: true });
+    new ResizeObserver(scrollState).observe(previews);
+    for (const tree of window.ybiraCatalog.filter(tree => tree.native)) {
+      const link = el("a");
+      link.href = "#citizen";
+      link.addEventListener("click", openPlantingGuide);
+      const placeholder = el("span", null, "species-photo-fallback");
+      placeholder.append(icon("leaf"));
+      const image = el("img");
+      const photo = window.ybiraTreePhotos[tree.scientific];
+      if (photo?.url) {
+        image.alt = "";
+        image.loading = "lazy";
+        image.onerror = () => image.replaceWith(placeholder);
+        image.src = photo.url;
+        link.append(image);
+      } else link.append(placeholder);
+      link.append(el("span", tree.name));
+      previews.append(link);
+    }
+    header.append(speciesHeading, controls);
+    species.append(header, previews, el("small", "Examples from the catalog. Check your sidewalk for a recommendation.", "small"));
+    return species;
+  }
+
+  const nativeTrees = treeCarousel();
+
   function resident(area) {
     const panel = $("resident-overview");
     if (!area) {
@@ -98,35 +164,7 @@
     shadeHeading.prepend(icon("leaf"));
     shade.append(shadeHeading, ring(area.vegetation == null ? "—" : fmt(area.vegetation * 100) + "%", "", ["#4daf4b"], [100 * (area.vegetation ?? 0)]));
     cards.append(heat, shade);
-
-    const species = el("section", null, "panel dashboard-card");
-    const speciesHeading = el("h2", "Explore native trees");
-    speciesHeading.prepend(icon("leaf"));
-    const previews = el("div", null, "species-teasers");
-    const names = ["Carobinha", "Ipê-amarelo", "Tingui-preto"];
-    const options = names.map(name => window.ybiraCatalog.find(tree => tree.name === name)).filter(Boolean);
-    for (const tree of options) {
-      const link = el("a");
-      link.href = "#citizen";
-      link.addEventListener("click", event => {
-        event.preventDefault();
-        open("residents", false);
-        $("citizen").scrollIntoView({ block: "start" });
-      });
-      const image = el("img");
-      const photo = window.ybiraTreePhotos[tree.scientific];
-      if (photo?.url) {
-        image.src = photo.url;
-        image.alt = tree.name;
-        image.loading = "lazy";
-        image.onerror = () => image.remove();
-        link.append(image);
-      }
-      link.append(el("span", tree.name));
-      previews.append(link);
-    }
-    species.append(speciesHeading, previews, el("small", "Examples from the catalog. Check your sidewalk for a recommendation.", "small"));
-    panel.replaceChildren(address, cards, species);
+    panel.replaceChildren(address, cards, nativeTrees);
   }
 
   function update(area) {
@@ -201,11 +239,9 @@
     });
   }
 
-  $("sidewalk-shortcut").onclick = event => {
-    event.preventDefault();
-    window.openYbira("residents", false);
-    $("citizen").scrollIntoView({ block: "start" });
-  };
+  for (const link of document.querySelectorAll("[data-planting-shortcut]")) {
+    link.addEventListener("click", openPlantingGuide);
+  }
   $("ask-map").addEventListener("click", () => {
     window.openYbira("chat");
     answers.focus();

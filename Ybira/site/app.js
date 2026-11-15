@@ -28,7 +28,7 @@ const layers = {
   priority: { label: "Planting priority · Higher score = earlier field visit", bands: [20, 40, 60, 80], labels: ["<20", "20–<40", "40–<60", "60–<80", "80–100"], value: a => a.priority, palette: priorityColors },
   vegetation: { label: "Estimated vegetation cover · GeoSampa, imagery from 2017–18", bands: ratios, labels: ratioLabels, value: a => a.vegetation, palette: greens },
   income: { label: "Median monthly income of household heads with earnings · Census 2022", bands: [1000, 1500, 2000, 3000], labels: ["<R$1k", "1–<1.5k", "1.5–<2k", "2–<3k", "R$3k+"], value: a => a.income, palette: greens },
-  equity: { label: "Share identifying as Black (Preta) or Brown (Parda) · Census 2022", bands: ratios, labels: ratioLabels, value: a => a.equity, palette: purples },
+  equity: { label: "Share identifying as Black (Preta) or mixed-race (Parda) · Census 2022", bands: ratios, labels: ratioLabels, value: a => a.equity, palette: purples },
   exposure: { label: "Share of assessed residents on blocks without trees · Census 2022", bands: ratios, labels: ratioLabels, value: a => a.exposed, palette: colors },
   olderShare: { label: "Percentage of residents aged 65 or older · Census 2022", bands: [.05, .1, .15, .2], labels: ["<5%", "5–<10%", "10–<15%", "15–<20%", "20%+"], value: a => a.olderShare, palette: purples },
   olderCount: { label: "Number of residents aged 65 or older · Census 2022", bands: [5000, 10000, 20000, 30000], labels: ["<5,000", "5–<10k", "10–<20k", "20–<30k", "30k+"], value: a => a.olderCount, palette: purples },

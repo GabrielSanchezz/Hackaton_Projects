@@ -28,7 +28,7 @@ const priorityFactors = [
   { label: "Surface heat", weight: 30, value: (area, rows) => percentile(area, rows, "mean") },
   { label: "Lack of vegetation cover", weight: 25, value: area => 1 - area.vegetation },
   { label: "Lower household-head income", weight: 15, value: (area, rows) => percentile(area, rows, "income", true) },
-  { label: "Black and Brown population share", weight: 15, value: area => area.equity },
+  { label: "Black and mixed-race population share", weight: 15, value: area => area.equity },
   { label: "Residents on blocks without trees", weight: 15, value: area => area.exposed },
 ];
 

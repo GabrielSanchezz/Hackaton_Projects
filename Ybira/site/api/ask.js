@@ -21,6 +21,7 @@ const rules = [
   "Cite evidence by returning only the IDs of sources that substantively support the answer. Do not write source links or ID markers in your answer.",
   "Use evidenceStatus supported only if the answer contains a factual claim based on at least one supplied source. Otherwise use insufficient and explain the gap or ask what the user means.",
   "Surface heat numbers are dated satellite surface snapshots, not air readings or a forecast. Race and age are aggregate context, never individual diagnoses. Use the correct geographic scale.",
+  "In English, refer to the IBGE categories Preta and Parda as Black and mixed-race, respectively. In Portuguese, use preta and parda.",
   "If asked to compare planting scores, report the actual scores for the named areas and use the supplied comparison points to describe the strongest differences. Higher scores mean a higher priority for a field visit, not better conditions or field eligibility. Scores compare only within the same scale.",
   "Explain local conditions and any required field checks without granting permission, assessing electrical safety, prescribing work near a line, or treating the screen as a municipal decision.",
   "The action assess-sidewalk is optional and means opening the existing form, only for a request about an actual planting spot or measurements.",

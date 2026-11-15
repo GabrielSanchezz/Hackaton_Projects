@@ -3,60 +3,17 @@ import "../age-data.js";
 import "../district-data.js";
 import "../organization-data.js";
 import "../priority.js";
-import "../data.js";
-import "../clinic-data.js";
 
 export const mapSource = {
   id: "map",
   title: "Ybirá · public São Paulo map and planting score",
   url: "https://ybira-eosin.vercel.app/#map-stage",
 };
-const clinicSource = {
-  id: "clinics",
-  title: "GeoSampa · São Paulo public health facility locations",
-  url: "https://novogeosampa.prefeitura.sp.gov.br/",
-};
-const bounds = { west: -46.71550388, south: -23.48136555, east: -46.66351132, north: -23.41518085 };
 const round = (value, scale = 1) => Number.isFinite(value) ? Math.round(value * scale * 100) / 100 : null;
 const wordMatch = (text, word) => (" " + text + " ").includes(" " + word + " ");
 
 export function normalize(text) {
   return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function shapesById(data) {
-  return new Map(data.sectors.map(sector => [sector.id, sector.path]));
-}
-
-function box(path) {
-  const x = [], y = [];
-  for (const [, px, py] of path.matchAll(/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)) {
-    x.push(Number(px));
-    y.push(Number(py));
-  }
-  return [Math.min(...x), Math.min(...y), Math.max(...x), Math.max(...y)];
-}
-
-const mapData = {
-  ...window.ybiraPriority,
-  clinics: window.ybiraClinicData,
-  paths: shapesById(window.ybira),
-  pilotBox: box(window.ybira.outlines[1]),
-};
-
-function getClinicList(area, map) {
-  const path = map.paths.get(area.id);
-  if (!path) return [];
-  const [x1, y1, x2, y2] = box(path);
-  const [left, top, right, bottom] = map.pilotBox;
-  const x = bounds.west + (((x1 + x2) / 2 - left) / (right - left)) * (bounds.east - bounds.west);
-  const y = bounds.north - (((y1 + y2) / 2 - top) / (bottom - top)) * (bounds.north - bounds.south);
-  const degrees = Math.PI / 180;
-  return map.clinics.map(([name, address, lon, lat, insidePilotDistrict]) => {
-    const dx = (lon - x) * Math.cos((lat + y) / 2 * degrees);
-    const km = Math.hypot(dx, lat - y) * degrees * 6371;
-    return { name, address, insidePilotDistrict, approximateStraightLineKm: round(km) };
-  }).sort((a, b) => a.approximateStraightLineKm - b.approximateStraightLineKm).slice(0, 4);
 }
 
 function lookupAreas(question, fromMap, map) {
@@ -116,8 +73,8 @@ function profile(area, map) {
     vegetationBasis: area.scale === "sector" ? "GeoSampa mapped vegetation, 2017–18 imagery" : "Rede Nossa São Paulo published 2020 indicator",
     medianMonthlyIncomeBRL: area.income,
     incomeBasis: "Median for household heads with earnings (Census 2022); not per capita",
-    blackAndBrownPercent: round(area.equity, 100),
-    raceCountsWhiteBlackAsianBrownIndigenous: area.race,
+    blackAndMixedRacePercent: round(area.equity, 100),
+    raceCountsWhiteBlackAsianMixedRaceIndigenous: area.race,
     withoutStreetTreesCount: area.exposed === null ? null : area.without,
     assessedForStreetTrees: area.assessed,
     withoutStreetTreesPercent: round(area.exposed, 100),
@@ -139,11 +96,11 @@ function compactRanking(rows) {
 }
 
 export function areaContext(question, areaId, previousQuestion) {
-  const map = mapData;
+  const map = window.ybiraPriority;
   const explicit = lookupAreas(question, areaId, map);
   const selected = map.sectorIndicators.get(areaId) ?? map.districtIndicators.get(areaId);
   const q = normalize(question);
-  const localMarkers = /\b(ubs|bairro|distrito|setor|district|census|mapa|map|vegetacao|vegetation|temperatura|temperature|percentual|percentage|renda|income|idosos|idosas|older|idade|race|raca|score|calor|heat|mirangoaba|ranking|prioridade|priority)\b/;
+  const localMarkers = /\b(bairro|distrito|setor|district|census|mapa|map|vegetacao|vegetation|temperatura|temperature|percentual|percentage|renda|income|idosos|idosas|older|idade|race|raca|score|calor|heat|mirangoaba|ranking|prioridade|priority)\b/;
   const refersHere = /\b(aqui|here|la|ali|neste|nesta|nesse|nessa|this area|this district|this sector|selecionad[oa]|selected|desse setor|dessa area|da area|do setor|do distrito|desse distrito|no mapa)\b/.test(q);
   const isLocal = Boolean(explicit.areas.length || explicit.ambiguous.length || explicit.unmatchedIds.length || localMarkers.test(q) || /\b(65 anos|65 plus|sem arvores)\b/.test(q));
   const followsUp = /^(e|and|e para|what about|how about)\b/.test(q) && q.split(" ").length <= 12;
@@ -168,7 +125,7 @@ export function areaContext(question, areaId, previousQuestion) {
     ambiguousCommunityNames: explicit.ambiguous,
     unmatchedAreaIds: explicit.unmatchedIds,
     requestedPlaceUnavailable: unrecognizedPlace,
-    notes: "Areas are official São Paulo districts or the Brasilândia pilot census sectors. City districts and pilot sectors are scored within their own scale; compare numerical scores only within the same scale. If the user names an unsupported place, say its data is unavailable. Older residents and clinics are contextual layers, outside the score. All score contributions are computed by the app.",
+    notes: "Areas are official São Paulo districts or the Brasilândia pilot census sectors. City districts and pilot sectors are scored within their own scale; compare numerical scores only within the same scale. If the user names an unsupported place, say its data is unavailable. Older residents are a contextual layer outside the score. All score contributions are computed by the app.",
   };
   const [first, second] = contextual.areas;
   if (first?.scale === second?.scale && first?.priorityScore != null && second?.priorityScore != null) {
@@ -187,18 +144,5 @@ export function areaContext(question, areaId, previousQuestion) {
       : { scale: "district", leaders: compactRanking(map.districtPriorityOrder) };
   }
   const url = contextAreas.length === 1 ? "https://ybira-eosin.vercel.app/?area=" + contextAreas[0].id + "#map-stage" : mapSource.url;
-  const items = [{ ...mapSource, url, text: JSON.stringify(contextual), details: contextual }];
-  if (/\b(ubs|clinic|clinics|posto|postos|unidade|visita|vistoria|visit|walk|shade|sombra|hospital)\b/.test(q)) {
-    const localSector = contextAreas.find(area => area.scale === "sector");
-    const pilotDistrict = contextAreas.some(area => area.name === "Brasilândia");
-    if (localSector || pilotDistrict) {
-      const closest = localSector ? getClinicList(localSector, map) : [];
-      const places = localSector ? closest : map.clinics.slice(0, 8).map(([name, address]) => ({ name, address }));
-      items.push({ ...clinicSource, text: JSON.stringify({
-        scope: "Mapped clinics in and around the Brasilândia pilot. No citywide clinic proximity estimates. Straight-line distance is approximate and does not describe walking routes or identify the responsible catchment.",
-        sectorId: localSector?.id ?? null, places,
-      }) });
-    }
-  }
-  return items;
+  return [{ ...mapSource, url, text: JSON.stringify(contextual), details: contextual }];
 }
