@@ -13,62 +13,44 @@
     <button id="org-tab" aria-pressed="false">Organizations</button>
   </nav>
   <div class="grid">
-    <section class="panel" aria-labelledby="map-title">
+    <section class="panel audience-panel" id="citizen">
+      <h2>Find a tree for your sidewalk</h2>
+      <form id="interpret" class="description">
+        <label for="description">What is the spot like?</label>
+        <textarea id="description" rows="3" maxlength="800" required placeholder="My sidewalk is about two meters wide. There are no wires overhead."></textarea>
+        <p class="small">Write in English or Portuguese. Leave out your address and contact details.</p>
+        <div class="form-actions">
+          <button type="submit" id="interpret-button">Read my description</button>
+          <button type="button" class="text-button" id="manual-start">Answer without AI</button>
+        </div>
+        <p id="interpret-status" role="status" class="small"></p>
+      </form>
+      <form id="plant" class="assessment" aria-labelledby="assessment-title" hidden>
+        <h3 id="assessment-title" tabindex="-1"></h3>
+        <p id="assessment-note" class="small"></p>
+        <div id="assessment-fields"></div>
+        <div class="form-actions">
+          <button type="submit" id="assessment-next">Continue</button>
+          <button type="button" class="text-button" id="assessment-back">Back</button>
+          <button type="button" class="text-button" id="assessment-skip" hidden>I’ll check later</button>
+        </div>
+      </form>
+      <section class="result" id="result" aria-live="polite" hidden></section>
+      <details class="ranking-source"><summary>How Ybirá chooses trees</summary><p>Ybirá checks the city's planting guide and shows up to four locally native species that fit the answers. It uses the <a href="https://prefeitura.sp.gov.br/documents/d/meio_ambiente/estoque-de-mudas-dau-2-2026-10-27t131624-090-pdf">October 2026 nursery inventory</a> and past use in sidewalks to order the options.</p></details>
+      <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/parques/284396">Ask São Paulo 156 about free tree planting</a>
+    </section>
+    <section class="panel audience-panel" id="org" hidden>
+      <h2>Plan a site visit</h2>
+      <p>Three candidate census areas based on heat and lack of street trees. The list prioritizes the number of surveyed residents living on block faces with no trees.</p>
+      <div id="targets"></div>
+      <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/servicos/viveiros/fornecimento_de_mudas/4465">See the city's tree seedling program for organizations</a>
+    </section>
+    <section class="panel map-panel" aria-labelledby="map-title">
       <div class="row"><h2 id="map-title">São Paulo</h2><button id="zoom">Explore Brasilândia</button></div>
       <svg id="map" viewBox="0 0 360 350" aria-label="Interactive surface temperature map"></svg>
       <p class="small">Surface temperature · Landsat 9 · Nov 29, 2025</p>
       <div class="legend" aria-label="Temperature ranges in degrees Celsius"><span>&lt;33 °C</span><span>33–37</span><span>37–41</span><span>41–45</span><span>45+</span></div>
       <p id="detail" aria-live="polite"></p>
-    </section>
-    <section class="panel" id="citizen">
-      <h2>Assess a planting site</h2>
-      <form id="interpret" class="description">
-        <label for="description">Describe the site</label>
-        <textarea id="description" rows="3" maxlength="800" required placeholder="My sidewalk is about two meters wide, with overhead wires."></textarea>
-        <p class="small">Describe a sidewalk, street, public square, yard, or plot. Leave names, phone numbers, and addresses out of the description you send to the AI.</p>
-        <button type="submit" id="interpret-button">Fill in the form</button>
-        <p id="interpret-status" role="status" class="small"></p>
-      </form>
-      <form id="plant">
-        <label>Full address <input id="address" placeholder="Street, number, neighborhood" autocomplete="street-address"></label>
-        <p class="small">Open Brasilândia and select the address's census area on the map.</p>
-        <label>Site type<select name="place"><option value="">Unknown</option><option value="calcada">Sidewalk</option><option value="rua">Street</option><option value="praca">Public square</option><option value="terreno">Plot</option><option value="quintal">Yard</option><option value="outro">Other</option></select></label>
-        <div id="sidewalk-fields" class="fields">
-          <label>Total sidewalk width (m)<input name="total" type="number" step="0.01" min="0"></label>
-          <label>Clear pedestrian width (m)<input name="free" type="number" step="0.01" min="0"></label>
-        </div>
-        <label id="space-field" hidden>Available planting area (m²)<input name="area" type="number" step="0.01" min="0"></label>
-        <label>Overhead wires<select name="wires"><option value="">Unknown</option><option value="Presente">Present</option><option value="Ausente">Absent</option></select></label>
-        <label>Existing tree at the site<select name="tree"><option value="">Unknown</option><option value="Presente">Present</option><option value="Ausente">Absent</option></select></label>
-        <details><summary>How to measure</summary><p>Measure the total sidewalk width excluding the curb. Enter how much clear walking space would remain at the planting point.</p></details>
-        <div id="sidewalk-checks">
-          <div class="fields">
-            <label>Planting bed width (m)<input name="bedWidth" type="number" min="0" step="0.01"></label>
-            <label>Permeable bed area (m²)<input name="bedArea" type="number" min="0" step="0.01"></label>
-          </div>
-          <label>Verified clearances
-            <select name="clearance"><option value="">Needs a site check</option><option value="1">Meets column 1 only (small trees)</option><option value="2">Meets column 2 (medium trees)</option><option value="3">Meets column 3 (large trees)</option><option value="0">Does not meet column 1</option></select>
-          </label>
-          <p class="small">Use the highest column met in <a href="https://drive.prefeitura.sp.gov.br/cidade/secretarias/subprefeituras/upload/se/MARBOURB.pdf#page=27">Table 03 of the municipal guide</a>. Check distances to intersections, poles, utilities and existing trees on site.</p>
-          <div class="fields">
-            <label>Building set back from the sidewalk?<select name="setback"><option value="">Unknown</option><option value="yes">Yes</option><option value="no">No</option></select></label>
-            <label>Traffic in the adjacent lane<select name="traffic"><option value="">Unknown</option><option value="cars">Mostly cars</option><option value="bus">Bus corridor or frequent heavy vehicles</option></select></label>
-          </div>
-          <label>Verified Chave Arborizar code (only for wider sidewalks or sites with overhead wires)
-            <select name="code" id="codes"><option value="">Calculate when supported</option></select>
-          </label>
-        </div>
-        <button type="submit">Rank suitable trees</button>
-      </form>
-      <div class="result" id="result" aria-live="polite"></div>
-      <details><summary>How the ranking works</summary><p>The guide's site conditions and the locally native species list determine which trees are eligible. Species listed in the <a href="https://prefeitura.sp.gov.br/documents/d/meio_ambiente/estoque-de-mudas-dau-2-2026-10-27t131624-090-pdf">Oct 27, 2026 nursery inventory</a> rank first, then established use and listed stock count. The site shows up to four candidates.</p></details>
-      <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/parques/284396">Request free tree planting through São Paulo 156</a>
-    </section>
-    <section class="panel" id="org" hidden>
-      <h2>Plan a site visit</h2>
-      <p>Three candidate census areas based on heat and lack of street trees. The list prioritizes the number of surveyed residents living on block faces with no trees.</p>
-      <div id="targets"></div>
-      <a href="https://prefeitura.sp.gov.br/web/meio_ambiente/w/servicos/viveiros/fornecimento_de_mudas/4465">See the city's tree seedling program for organizations</a>
     </section>
   </div>
   <footer>Sources: <a href="https://novogeosampa.prefeitura.sp.gov.br/">GeoSampa (CC BY-SA)</a>, <a href="https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/">IBGE</a>, <a href="https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-temperature">Landsat/USGS</a> and <a href="https://prefeitura.sp.gov.br/meio_ambiente/w/publicacoes_svma/188452">Municipal planting guide</a>.</footer>
@@ -78,4 +60,5 @@
 <script src="recommend.js"></script>
 <script src="interpretar-local.js"></script>
 <script src="app.js"></script>
+<script src="planting.js"></script>
 </html>
