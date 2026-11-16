@@ -14,7 +14,7 @@ body{margin:0;background:#f7faf8;color:var(--ink);font-family:"DM Sans",Arial,sa
 .brand,.site-header a,.side-rail a,.entry-card,.map-teaser,.wide-action,.header-action{text-decoration:none;color:inherit}
 .brand{display:flex;align-items:center;gap:8px;white-space:nowrap}
 .brand strong{font-size:clamp(30px,3.25vw,44px);font-weight:900;letter-spacing:-.08em;line-height:1}
-.brand-tree{width:clamp(38px,4.5vw,55px);height:auto;aspect-ratio:1}
+.brand-tree{width:clamp(42px,4.7vw,62px);height:auto;aspect-ratio:96/76}
 .brand-description{border-left:1px solid #90a499;padding-left:21px;font-size:16px;line-height:1.24;font-weight:600}
 .header-nav{margin:0 10px 0 auto;display:flex;gap:clamp(18px,3.3vw,46px)}
 .header-nav a{font-weight:700;white-space:nowrap;padding:10px 0}
